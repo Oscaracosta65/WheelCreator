@@ -1,0 +1,2020 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!--
+    ================================================================
+    WHEEL GENERATOR — Client-side Lottery Covering Design Generator
+    ================================================================
+    Joomla 5.x setup:
+      1. Create a Custom HTML module or article.
+      2. Switch to HTML/Source view (not WYSIWYG).
+      3. Paste the entire contents of this file.
+      4. Save and publish.
+
+    Brand customization:
+      - Edit the CSS :root block to change colors, fonts, and shapes.
+      - Replace the emoji in .wg-logo with your <img> tag.
+      - Change the <h1> and tagline text in the <header>.
+
+    Limits note:
+      - This runs entirely in your browser — no server, no database.
+      - For small/medium jobs (e.g. 25 from 25, tickets of 5) the result
+        is fully verified. For large jobs (e.g. 49/6) it uses smart
+        shortcuts and tells you honestly what was checked.
+    ================================================================
+  -->
+  <title>Wheel Generator</title>
+  <style>
+    /* ============================================================
+       BRAND VARIABLES
+       Edit ONLY this block to re-skin the entire page.
+       ============================================================ */
+    :root {
+      /* Primary brand color — buttons, links, highlights */
+      --brand-primary:    #2563eb;
+      /* Darker shade — headings, hover states */
+      --brand-secondary:  #1e40af;
+      /* Accent — badges, progress bar, callout highlights */
+      --brand-accent:     #f59e0b;
+      /* Page background */
+      --surface-bg:       #f1f5f9;
+      /* Card / panel background */
+      --surface-card:     #ffffff;
+      /* Card border */
+      --surface-border:   #e2e8f0;
+      /* Input background */
+      --surface-input:    #f8fafc;
+      /* Main text */
+      --text-primary:     #0f172a;
+      /* Body text */
+      --text-secondary:   #475569;
+      /* Helper / placeholder text */
+      --text-muted:       #94a3b8;
+      /* Text on colored surfaces */
+      --text-on-primary:  #ffffff;
+      /* Semantic colours */
+      --color-success:    #10b981;
+      --color-warning:    #f59e0b;
+      --color-error:      #ef4444;
+      --color-info:       #3b82f6;
+      /* Hero gradient */
+      --hero-from:        #1e3a8a;
+      --hero-to:          #3b82f6;
+      /* Shapes */
+      --radius-sm:        6px;
+      --radius-md:        12px;
+      --radius-lg:        20px;
+      /* Typography */
+      --font-stack: 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont,
+                    'Helvetica Neue', Arial, sans-serif;
+      /* Shadows */
+      --shadow-sm: 0 1px 3px rgba(0,0,0,.10), 0 1px 2px rgba(0,0,0,.06);
+      --shadow-md: 0 4px 6px rgba(0,0,0,.07), 0 2px 4px rgba(0,0,0,.06);
+      --shadow-lg: 0 10px 25px rgba(0,0,0,.10), 0 4px 10px rgba(0,0,0,.05);
+      /* Button radius */
+      --btn-radius: 8px;
+    }
+
+    /* ============================================================
+       RESET & BASE
+       ============================================================ */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; scroll-behavior: smooth; }
+    body {
+      font-family: var(--font-stack);
+      background: var(--surface-bg);
+      color: var(--text-secondary);
+      line-height: 1.6;
+    }
+    h1,h2,h3,h4 { color: var(--text-primary); line-height: 1.3; font-weight: 700; }
+    a { color: var(--brand-primary); }
+
+    /* ============================================================
+       LAYOUT
+       ============================================================ */
+    .wg-container { max-width: 960px; margin: 0 auto; padding: 0 1rem; }
+    .wg-section   { padding: 2.5rem 0; }
+    .wg-section + .wg-section { border-top: 1px solid var(--surface-border); }
+
+    /* ============================================================
+       HERO
+       ============================================================ */
+    .wg-hero {
+      background: linear-gradient(135deg, var(--hero-from), var(--hero-to));
+      color: var(--text-on-primary);
+      padding: 3rem 0 3.5rem;
+    }
+    .wg-hero__inner {
+      display: flex; align-items: center; gap: 1.5rem; flex-wrap: wrap;
+    }
+    /* Logo placeholder — replace with <img> for your brand */
+    .wg-logo {
+      width: 64px; height: 64px;
+      background: rgba(255,255,255,.15);
+      border-radius: var(--radius-md);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 2rem; flex-shrink: 0;
+    }
+    .wg-hero__text h1 {
+      color: #fff; font-size: clamp(1.6rem, 4vw, 2.4rem); letter-spacing: -.02em;
+    }
+    .wg-hero__tagline { font-size: 1.05rem; opacity: .88; margin-top: .35rem; }
+    .wg-hero__notice {
+      margin-top: 1.25rem;
+      background: rgba(255,255,255,.12);
+      border: 1px solid rgba(255,255,255,.22);
+      border-radius: var(--radius-md);
+      padding: .7rem 1rem;
+      font-size: .875rem; opacity: .92; max-width: 640px;
+    }
+
+    /* ============================================================
+       CARDS
+       ============================================================ */
+    .wg-card {
+      background: var(--surface-card);
+      border: 1px solid var(--surface-border);
+      border-radius: var(--radius-md);
+      padding: 1.5rem;
+      box-shadow: var(--shadow-sm);
+    }
+    .wg-card__title {
+      font-size: 1rem; font-weight: 700; margin-bottom: .5rem;
+      display: flex; align-items: center; gap: .5rem; color: var(--text-primary);
+    }
+    .wg-card__icon {
+      width: 28px; height: 28px; border-radius: 6px;
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 1rem; flex-shrink: 0;
+    }
+    .wg-card__icon--blue   { background: #dbeafe; }
+    .wg-card__icon--amber  { background: #fef3c7; }
+    .wg-card__icon--green  { background: #d1fae5; }
+    .wg-card__icon--violet { background: #ede9fe; }
+    .wg-card p { font-size: .9rem; color: var(--text-secondary); }
+    .wg-grid-4 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+    }
+
+    /* ============================================================
+       EXAMPLE BOX
+       ============================================================ */
+    .wg-example-box {
+      background: #f0f9ff; border: 1px solid #bae6fd;
+      border-radius: var(--radius-md);
+      padding: 1.25rem 1.5rem; margin-top: 1.25rem; font-size: .9rem;
+    }
+    .wg-example-box strong { color: var(--brand-secondary); }
+
+    /* ============================================================
+       FORM
+       ============================================================ */
+    .wg-form-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1.25rem;
+    }
+    .wg-field { display: flex; flex-direction: column; gap: .4rem; }
+    .wg-field label {
+      font-size: .875rem; font-weight: 600; color: var(--text-primary);
+    }
+    .wg-field input, .wg-field select {
+      padding: .6rem .75rem;
+      border: 1.5px solid var(--surface-border);
+      border-radius: var(--radius-sm);
+      background: var(--surface-input);
+      font-family: var(--font-stack);
+      font-size: .95rem; color: var(--text-primary);
+      transition: border-color .15s, box-shadow .15s;
+      width: 100%;
+    }
+    .wg-field input:focus, .wg-field select:focus {
+      outline: none; border-color: var(--brand-primary);
+      box-shadow: 0 0 0 3px rgba(37,99,235,.12);
+    }
+    .wg-field__helper { font-size: .8rem; color: var(--text-muted); }
+    .wg-field__error  { font-size: .8rem; color: var(--color-error); display: none; }
+    .wg-field.has-error input,
+    .wg-field.has-error select  { border-color: var(--color-error); }
+    .wg-field.has-error .wg-field__error { display: block; }
+
+    /* ============================================================
+       DYNAMIC DESCRIPTION PANEL
+       ============================================================ */
+    .wg-desc-panel {
+      background: linear-gradient(135deg, #f0f9ff, #e0f2fe);
+      border: 1px solid #bae6fd;
+      border-radius: var(--radius-md);
+      padding: 1.1rem 1.4rem;
+      font-size: .92rem; color: #0369a1;
+      min-height: 52px; transition: all .3s;
+    }
+    .wg-desc-panel.wg-desc--warning {
+      background: linear-gradient(135deg, #fffbeb, #fef3c7);
+      border-color: #fcd34d; color: #92400e;
+    }
+    .wg-desc-panel.wg-desc--error {
+      background: linear-gradient(135deg, #fef2f2, #fee2e2);
+      border-color: #fca5a5; color: #991b1b;
+    }
+
+    /* ============================================================
+       BUTTONS
+       ============================================================ */
+    .wg-btn {
+      display: inline-flex; align-items: center; gap: .4rem;
+      padding: .6rem 1.1rem; border-radius: var(--btn-radius);
+      font-family: var(--font-stack); font-size: .9rem; font-weight: 600;
+      cursor: pointer; border: none;
+      transition: background .15s, opacity .15s, transform .1s;
+      white-space: nowrap;
+    }
+    .wg-btn:active { transform: scale(.97); }
+    .wg-btn:disabled { opacity: .45; cursor: not-allowed; transform: none; }
+    .wg-btn--primary { background: var(--brand-primary); color: var(--text-on-primary); }
+    .wg-btn--primary:hover:not(:disabled) { background: var(--brand-secondary); }
+    .wg-btn--danger  { background: var(--color-error); color: #fff; }
+    .wg-btn--danger:hover:not(:disabled)  { background: #dc2626; }
+    .wg-btn--outline {
+      background: transparent; color: var(--text-primary);
+      border: 1.5px solid var(--surface-border);
+    }
+    .wg-btn--outline:hover:not(:disabled) {
+      background: var(--surface-bg);
+      border-color: var(--brand-primary); color: var(--brand-primary);
+    }
+    .wg-controls { display: flex; flex-wrap: wrap; gap: .75rem; align-items: center; }
+
+    /* ============================================================
+       PROGRESS
+       ============================================================ */
+    .wg-progress-wrap { display: none; }
+    .wg-progress-wrap.is-visible { display: block; }
+    .wg-progress-bar-track {
+      background: var(--surface-border);
+      border-radius: 100px; height: 8px; overflow: hidden; margin: .75rem 0;
+    }
+    .wg-progress-bar-fill {
+      background: linear-gradient(90deg, var(--brand-primary), var(--brand-accent));
+      height: 100%; border-radius: 100px; width: 0%;
+      transition: width .3s ease;
+    }
+    .wg-progress-bar-fill.is-indeterminate {
+      animation: wg-shimmer 1.5s infinite; width: 40%;
+    }
+    @keyframes wg-shimmer {
+      0%   { margin-left: -40%; }
+      100% { margin-left: 100%; }
+    }
+    .wg-status-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: .75rem; margin-top: .75rem;
+    }
+    .wg-stat {
+      background: var(--surface-input);
+      border: 1px solid var(--surface-border);
+      border-radius: var(--radius-sm);
+      padding: .6rem .85rem;
+    }
+    .wg-stat__label {
+      font-size: .75rem; text-transform: uppercase; letter-spacing: .05em;
+      color: var(--text-muted); font-weight: 600;
+    }
+    .wg-stat__value { font-size: 1.05rem; font-weight: 700; color: var(--text-primary); margin-top: .1rem; }
+
+    /* ============================================================
+       RESULTS
+       ============================================================ */
+    .wg-results-wrap { display: none; }
+    .wg-results-wrap.is-visible { display: block; }
+    .wg-results-summary {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      gap: .75rem; margin-bottom: 1.5rem;
+    }
+    .wg-badge {
+      display: inline-flex; align-items: center; gap: .3rem;
+      padding: .25rem .65rem; border-radius: 100px;
+      font-size: .78rem; font-weight: 600;
+    }
+    .wg-badge--success { background: #d1fae5; color: #065f46; }
+    .wg-badge--warning { background: #fef3c7; color: #92400e; }
+    .wg-badge--info    { background: #dbeafe; color: #1e40af; }
+    .wg-badge--error   { background: #fee2e2; color: #991b1b; }
+    .wg-section-title {
+      font-size: 1.25rem; font-weight: 700; color: var(--text-primary);
+      margin-bottom: 1rem; display: flex; align-items: center; gap: .6rem;
+    }
+    .wg-results-table-wrap {
+      overflow-x: auto;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--surface-border);
+    }
+    .wg-results-table { border-collapse: collapse; width: 100%; font-size: .9rem; }
+    .wg-results-table thead th {
+      background: var(--surface-bg); color: var(--text-primary);
+      font-weight: 700; padding: .65rem 1rem; text-align: left;
+      border-bottom: 1.5px solid var(--surface-border); white-space: nowrap;
+      font-size: .8rem; text-transform: uppercase; letter-spacing: .05em;
+    }
+    .wg-results-table tbody tr { border-bottom: 1px solid var(--surface-border); }
+    .wg-results-table tbody tr:hover { background: #f8fafc; }
+    .wg-results-table tbody td { padding: .6rem 1rem; color: var(--text-secondary); vertical-align: middle; }
+    .wg-ticket-numbers { display: flex; flex-wrap: wrap; gap: .35rem; }
+    .wg-num-chip {
+      display: inline-block; min-width: 30px; text-align: center;
+      padding: .2rem .4rem; background: var(--brand-primary); color: #fff;
+      border-radius: 4px; font-size: .82rem; font-weight: 700;
+    }
+
+    /* ============================================================
+       HOW IT WORKS
+       ============================================================ */
+    .wg-steps { display: flex; flex-direction: column; gap: 1rem; }
+    .wg-step  { display: flex; gap: 1rem; align-items: flex-start; }
+    .wg-step__num {
+      flex-shrink: 0; width: 32px; height: 32px; border-radius: 50%;
+      background: var(--brand-primary); color: #fff;
+      font-weight: 700; font-size: .85rem;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .wg-step__text strong { display: block; color: var(--text-primary); font-size: .95rem; margin-bottom: .2rem; }
+    .wg-step__text p { font-size: .875rem; }
+
+    /* ============================================================
+       FAQ
+       ============================================================ */
+    .wg-faq { display: flex; flex-direction: column; gap: .75rem; }
+    .wg-faq-item { border: 1px solid var(--surface-border); border-radius: var(--radius-md); overflow: hidden; }
+    .wg-faq-question {
+      width: 100%; background: var(--surface-card); border: none;
+      padding: .9rem 1.1rem; text-align: left; cursor: pointer;
+      font-family: var(--font-stack); font-size: .93rem; font-weight: 600;
+      color: var(--text-primary); display: flex; justify-content: space-between;
+      align-items: center; gap: 1rem; transition: background .15s;
+    }
+    .wg-faq-question:hover { background: var(--surface-bg); }
+    .wg-faq-chevron { flex-shrink: 0; transition: transform .25s; color: var(--text-muted); font-size: .85rem; }
+    .wg-faq-item.is-open .wg-faq-chevron { transform: rotate(180deg); }
+    .wg-faq-answer {
+      display: none; padding: .85rem 1.1rem 1rem;
+      font-size: .9rem; color: var(--text-secondary);
+      border-top: 1px solid var(--surface-border); background: var(--surface-card);
+    }
+    .wg-faq-item.is-open .wg-faq-answer { display: block; }
+
+    /* ============================================================
+       ALERTS
+       ============================================================ */
+    .wg-alert {
+      border-radius: var(--radius-md); padding: .85rem 1.1rem;
+      font-size: .9rem; display: flex; gap: .6rem; align-items: flex-start;
+      margin-bottom: 1rem;
+    }
+    .wg-alert--error   { background: #fef2f2; border: 1px solid #fca5a5; color: #991b1b; }
+    .wg-alert--warning { background: #fffbeb; border: 1px solid #fcd34d; color: #92400e; }
+    .wg-alert--success { background: #f0fdf4; border: 1px solid #86efac; color: #14532d; }
+    .wg-alert--info    { background: #eff6ff; border: 1px solid #93c5fd; color: #1e3a8a; }
+    .wg-alert--hidden  { display: none; }
+
+    /* ============================================================
+       FOOTER
+       ============================================================ */
+    .wg-footer {
+      text-align: center; padding: 2rem 1rem;
+      font-size: .82rem; color: var(--text-muted);
+      border-top: 1px solid var(--surface-border); margin-top: 1rem;
+    }
+
+    /* ============================================================
+       UTILITY
+       ============================================================ */
+    .wg-sr-only {
+      position: absolute; width: 1px; height: 1px; padding: 0;
+      margin: -1px; overflow: hidden; clip: rect(0,0,0,0);
+      white-space: nowrap; border: 0;
+    }
+    .wg-mt-1 { margin-top: .5rem; }
+    .wg-mt-2 { margin-top: 1rem; }
+    .wg-mt-3 { margin-top: 1.5rem; }
+    .wg-mb-1 { margin-bottom: .5rem; }
+    .wg-text-sm   { font-size: .875rem; }
+    .wg-text-muted { color: var(--text-muted); }
+
+    /* ============================================================
+       RESPONSIVE
+       ============================================================ */
+    @media (max-width: 640px) {
+      .wg-hero { padding: 2rem 0 2.5rem; }
+      .wg-hero__inner { gap: 1rem; }
+      .wg-logo { width: 48px; height: 48px; font-size: 1.5rem; }
+      .wg-section { padding: 2rem 0; }
+      .wg-controls { gap: .5rem; }
+      .wg-btn { font-size: .82rem; padding: .5rem .85rem; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ================================================================
+     HERO / HEADER
+     ================================================================ -->
+<header class="wg-hero" role="banner">
+  <div class="wg-container">
+    <div class="wg-hero__inner">
+      <!--
+        BRAND LOGO
+        Replace the emoji below with your own <img> tag, e.g.:
+        <img src="/images/my-logo.png" alt="My Brand" width="64" height="64">
+      -->
+      <div class="wg-logo" aria-hidden="true">🎡</div>
+      <div class="wg-hero__text">
+        <!-- BRAND PAGE TITLE — change this text -->
+        <h1>Wheel Generator</h1>
+        <!-- BRAND TAGLINE — change this text -->
+        <p class="wg-hero__tagline">
+          Build a smart set of tickets that covers the combinations you need — all inside your browser.
+        </p>
+      </div>
+    </div>
+    <p class="wg-hero__notice" role="note">
+      ⚡ This tool builds wheels using smart search algorithms. For small and medium jobs it can
+      fully verify the result. For large jobs it uses efficient shortcuts and will always tell you
+      honestly what was verified.
+    </p>
+  </div>
+</header>
+
+<main class="wg-container" role="main">
+
+  <!-- ================================================================
+       SECTION 1: PLAIN-ENGLISH EXPLANATIONS
+       ================================================================ -->
+  <section class="wg-section" id="wg-explain" aria-labelledby="wg-explain-title">
+    <h2 class="wg-section-title" id="wg-explain-title">
+      <span aria-hidden="true">📖</span> What Is a Wheel?
+    </h2>
+    <div class="wg-grid-4">
+      <div class="wg-card">
+        <div class="wg-card__title">
+          <span class="wg-card__icon wg-card__icon--blue" aria-hidden="true">🎟</span>
+          What is a wheel?
+        </div>
+        <p>A wheel is a carefully chosen list of tickets. Instead of picking numbers randomly,
+        a wheel guarantees that certain number patterns always appear together somewhere in
+        your ticket set — no matter which numbers come up.</p>
+      </div>
+      <div class="wg-card">
+        <div class="wg-card__title">
+          <span class="wg-card__icon wg-card__icon--amber" aria-hidden="true">🎱</span>
+          Pool size (v)
+        </div>
+        <p>The total count of numbers you are choosing from. For example, in a 6/49 lottery
+        the pool is 49. Set this to whatever the rules of your game say.</p>
+      </div>
+      <div class="wg-card">
+        <div class="wg-card__title">
+          <span class="wg-card__icon wg-card__icon--green" aria-hidden="true">🃏</span>
+          Numbers per ticket (k)
+        </div>
+        <p>How many numbers go on each ticket. In a 6/49 lottery that is 6. Every ticket
+        the tool creates will have exactly this many numbers.</p>
+      </div>
+      <div class="wg-card">
+        <div class="wg-card__title">
+          <span class="wg-card__icon wg-card__icon--violet" aria-hidden="true">🏆</span>
+          Guarantee level (t)
+        </div>
+        <p>The size of the pattern you want to guarantee. If t=3, the wheel promises that
+        for every group of 3 numbers in your pool, at least one of your tickets will
+        contain all 3 of them.</p>
+      </div>
+    </div>
+    <div class="wg-example-box" role="note">
+      <strong>Quick example:</strong> With <em>v=10, k=3, t=2</em> you are saying:
+      "I want 3-number tickets from a pool of 10, and I need every possible pair of numbers
+      to appear on at least one ticket." There are C(10,2) = 45 pairs. The tool might cover
+      all of them with as few as 5 tickets — far fewer than the 120 possible tickets!
+    </div>
+  </section>
+
+  <!-- ================================================================
+       SECTION 2: PARAMETER FORM
+       ================================================================ -->
+  <section class="wg-section" id="wg-params" aria-labelledby="wg-params-title">
+    <h2 class="wg-section-title" id="wg-params-title">
+      <span aria-hidden="true">⚙️</span> Choose Your Parameters
+    </h2>
+
+    <!-- Presets -->
+    <div class="wg-field wg-mt-1" style="max-width:320px">
+      <label for="wg-preset">Load a preset example</label>
+      <select id="wg-preset">
+        <option value="">— Choose a preset —</option>
+        <option value="10,3,2">Pool 10 · Ticket 3 · Guarantee 2</option>
+        <option value="15,4,2">Pool 15 · Ticket 4 · Guarantee 2</option>
+        <option value="25,5,3">Pool 25 · Ticket 5 · Guarantee 3</option>
+        <option value="49,6,3">Classic 6/49 · Guarantee 3</option>
+      </select>
+      <span class="wg-field__helper">Fill the form below with a ready-made example.</span>
+    </div>
+
+    <div class="wg-form-grid wg-mt-2">
+      <!-- Pool size v -->
+      <div class="wg-field" id="wg-field-v">
+        <label for="wg-v">
+          Pool size <abbr title="Total numbers to pick from">(v)</abbr>
+        </label>
+        <input type="number" id="wg-v" name="v" min="2" max="200"
+               value="10" inputmode="numeric" autocomplete="off"
+               aria-describedby="wg-v-help wg-v-err">
+        <span class="wg-field__helper" id="wg-v-help">Total numbers in the pool. E.g. 49 for a 6/49 game.</span>
+        <span class="wg-field__error"  id="wg-v-err"  role="alert"></span>
+      </div>
+
+      <!-- Numbers per ticket k -->
+      <div class="wg-field" id="wg-field-k">
+        <label for="wg-k">
+          Numbers per ticket <abbr title="How many numbers on each ticket">(k)</abbr>
+        </label>
+        <input type="number" id="wg-k" name="k" min="2" max="50"
+               value="3" inputmode="numeric" autocomplete="off"
+               aria-describedby="wg-k-help wg-k-err">
+        <span class="wg-field__helper" id="wg-k-help">Numbers on each ticket. Must be ≤ pool size.</span>
+        <span class="wg-field__error"  id="wg-k-err"  role="alert"></span>
+      </div>
+
+      <!-- Guarantee level t -->
+      <div class="wg-field" id="wg-field-t">
+        <label for="wg-t">
+          Guarantee level <abbr title="Pattern size to guarantee">(t)</abbr>
+        </label>
+        <input type="number" id="wg-t" name="t" min="1" max="20"
+               value="2" inputmode="numeric" autocomplete="off"
+               aria-describedby="wg-t-help wg-t-err">
+        <span class="wg-field__helper" id="wg-t-help">Every group of t numbers will appear on at least one ticket.</span>
+        <span class="wg-field__error"  id="wg-t-err"  role="alert"></span>
+      </div>
+
+      <!-- Max tickets (optional) -->
+      <div class="wg-field" id="wg-field-maxtickets">
+        <label for="wg-maxtickets">Max tickets <span class="wg-text-muted">(optional)</span></label>
+        <input type="number" id="wg-maxtickets" name="maxtickets"
+               min="1" max="100000" placeholder="No limit"
+               inputmode="numeric" autocomplete="off"
+               aria-describedby="wg-maxtickets-help">
+        <span class="wg-field__helper" id="wg-maxtickets-help">
+          Stop after this many tickets. Coverage may be incomplete.
+        </span>
+      </div>
+
+      <!-- Restarts -->
+      <div class="wg-field" id="wg-field-restarts">
+        <label for="wg-restarts">Randomized restarts</label>
+        <select id="wg-restarts" aria-describedby="wg-restarts-help">
+          <option value="1">1 — fast, single attempt</option>
+          <option value="3" selected>3 — balanced</option>
+          <option value="5">5 — tries harder</option>
+          <option value="10">10 — maximum effort</option>
+        </select>
+        <span class="wg-field__helper" id="wg-restarts-help">
+          More restarts = more attempts to find a smaller wheel.
+        </span>
+      </div>
+
+      <!-- Time limit -->
+      <div class="wg-field" id="wg-field-timelimit">
+        <label for="wg-timelimit">Time limit</label>
+        <select id="wg-timelimit" aria-describedby="wg-timelimit-help">
+          <option value="10">10 seconds</option>
+          <option value="30" selected>30 seconds</option>
+          <option value="60">1 minute</option>
+          <option value="120">2 minutes</option>
+          <option value="300">5 minutes</option>
+        </select>
+        <span class="wg-field__helper" id="wg-timelimit-help">
+          The tool returns its best result when time runs out.
+        </span>
+      </div>
+    </div>
+
+    <!-- Dynamic description -->
+    <div class="wg-desc-panel wg-mt-2" id="wg-desc"
+         aria-live="polite" aria-label="Parameter description">
+      Enter your parameters above to see a plain-English summary here.
+    </div>
+
+    <!-- Validation error alert -->
+    <div class="wg-alert wg-alert--error wg-alert--hidden wg-mt-2"
+         id="wg-form-error" role="alert">
+      <span aria-hidden="true">❌</span>
+      <span id="wg-form-error-text"></span>
+    </div>
+  </section>
+
+  <!-- ================================================================
+       SECTION 3: CONTROLS
+       ================================================================ -->
+  <section class="wg-section" id="wg-controls-section"
+           aria-labelledby="wg-controls-title">
+    <h2 class="wg-section-title" id="wg-controls-title">
+      <span aria-hidden="true">▶️</span> Generate Your Wheel
+    </h2>
+    <div class="wg-controls" role="group" aria-label="Wheel generator controls">
+      <button class="wg-btn wg-btn--primary" id="wg-btn-generate" type="button">
+        <span aria-hidden="true">✨</span> Generate Wheel
+      </button>
+      <button class="wg-btn wg-btn--danger"  id="wg-btn-stop"         type="button" disabled>
+        <span aria-hidden="true">⏹</span> Stop
+      </button>
+      <button class="wg-btn wg-btn--outline" id="wg-btn-clear"        type="button" disabled>
+        <span aria-hidden="true">🗑</span> Clear
+      </button>
+      <button class="wg-btn wg-btn--outline" id="wg-btn-export-txt"   type="button" disabled>
+        <span aria-hidden="true">📄</span> Export TXT
+      </button>
+      <button class="wg-btn wg-btn--outline" id="wg-btn-export-json"  type="button" disabled>
+        <span aria-hidden="true">📦</span> Export JSON
+      </button>
+      <button class="wg-btn wg-btn--outline" id="wg-btn-copy"         type="button" disabled>
+        <span aria-hidden="true">📋</span> Copy Results
+      </button>
+    </div>
+    <p class="wg-text-sm wg-text-muted wg-mt-1">
+      The browser stays responsive during generation — you can scroll and read this page freely.
+    </p>
+  </section>
+
+  <!-- ================================================================
+       SECTION 4: PROGRESS
+       ================================================================ -->
+  <section class="wg-section wg-progress-wrap" id="wg-progress-section"
+           aria-labelledby="wg-progress-title" aria-live="polite">
+    <h2 class="wg-section-title" id="wg-progress-title">
+      <span aria-hidden="true">⏳</span> Generation Progress
+    </h2>
+    <div id="wg-phase-text" class="wg-text-sm"
+         style="color:var(--brand-primary);font-weight:600;min-height:1.4em;"></div>
+    <div class="wg-progress-bar-track"
+         role="progressbar" aria-label="Generation progress"
+         aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"
+         id="wg-progress-bar-role">
+      <div class="wg-progress-bar-fill" id="wg-progress-fill"></div>
+    </div>
+    <div class="wg-status-grid">
+      <div class="wg-stat">
+        <div class="wg-stat__label">Time elapsed</div>
+        <div class="wg-stat__value" id="wg-stat-time">0s</div>
+      </div>
+      <div class="wg-stat">
+        <div class="wg-stat__label">Tickets found</div>
+        <div class="wg-stat__value" id="wg-stat-tickets">0</div>
+      </div>
+      <div class="wg-stat">
+        <div class="wg-stat__label">Patterns left</div>
+        <div class="wg-stat__value" id="wg-stat-uncovered">—</div>
+      </div>
+      <div class="wg-stat">
+        <div class="wg-stat__label">Mode</div>
+        <div class="wg-stat__value" id="wg-stat-mode">—</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================================================================
+       SECTION 5: RESULTS
+       ================================================================ -->
+  <section class="wg-section wg-results-wrap" id="wg-results-section"
+           aria-labelledby="wg-results-title">
+    <h2 class="wg-section-title" id="wg-results-title">
+      <span aria-hidden="true">🏁</span> Your Wheel
+    </h2>
+    <div class="wg-results-summary" id="wg-results-summary"></div>
+    <div id="wg-verification-badge" class="wg-mt-1 wg-mb-1"></div>
+    <p id="wg-results-message" class="wg-text-sm wg-text-muted wg-mt-1"
+       style="margin-bottom:1rem;"></p>
+    <div class="wg-alert wg-alert--hidden" id="wg-result-alert">
+      <span id="wg-result-alert-icon" aria-hidden="true"></span>
+      <span id="wg-result-alert-text"></span>
+    </div>
+    <div class="wg-results-table-wrap">
+      <table class="wg-results-table" id="wg-results-table"
+             aria-label="Generated tickets">
+        <thead>
+          <tr>
+            <th scope="col">#</th>
+            <th scope="col">Ticket Numbers</th>
+          </tr>
+        </thead>
+        <tbody id="wg-results-tbody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ================================================================
+       SECTION 6: HOW IT WORKS
+       ================================================================ -->
+  <section class="wg-section" id="wg-howit" aria-labelledby="wg-howit-title">
+    <h2 class="wg-section-title" id="wg-howit-title">
+      <span aria-hidden="true">🔬</span> How It Works (Plain English)
+    </h2>
+    <div class="wg-steps" role="list">
+      <div class="wg-step" role="listitem">
+        <div class="wg-step__num" aria-hidden="true">1</div>
+        <div class="wg-step__text">
+          <strong>List all the patterns</strong>
+          <p>The tool first figures out every possible t-number pattern in your pool.
+          For pool=10, t=2 that is 45 pairs. For pool=49, t=3 that is 18,424 triples.</p>
+        </div>
+      </div>
+      <div class="wg-step" role="listitem">
+        <div class="wg-step__num" aria-hidden="true">2</div>
+        <div class="wg-step__text">
+          <strong>Pick the most useful ticket first</strong>
+          <p>It scores every candidate ticket by how many <em>uncovered</em> patterns it
+          contains, then picks the winner. This "most helpful first" approach is called
+          greedy selection.</p>
+        </div>
+      </div>
+      <div class="wg-step" role="listitem">
+        <div class="wg-step__num" aria-hidden="true">3</div>
+        <div class="wg-step__text">
+          <strong>Repeat until everything is covered</strong>
+          <p>Each picked ticket crosses its patterns off the list. The process repeats,
+          always choosing the ticket that adds the most new coverage.</p>
+        </div>
+      </div>
+      <div class="wg-step" role="listitem">
+        <div class="wg-step__num" aria-hidden="true">4</div>
+        <div class="wg-step__text">
+          <strong>Try again from scratch (restarts)</strong>
+          <p>To find a smaller wheel, the tool reruns the whole process with a different
+          random shuffle each time and keeps the best (smallest) result.</p>
+        </div>
+      </div>
+      <div class="wg-step" role="listitem">
+        <div class="wg-step__num" aria-hidden="true">5</div>
+        <div class="wg-step__text">
+          <strong>Remove unnecessary tickets</strong>
+          <p>At the end it checks whether any ticket is now redundant — its patterns are
+          all covered by other tickets. Redundant tickets are removed to shrink the wheel.</p>
+        </div>
+      </div>
+      <div class="wg-step" role="listitem">
+        <div class="wg-step__num" aria-hidden="true">6</div>
+        <div class="wg-step__text">
+          <strong>Large jobs use smart sampling</strong>
+          <p>When there are millions of possible tickets (like 6/49), testing every one
+          each round would freeze the browser. Instead the tool randomly samples a group
+          of promising candidates per round. The result is still a very good wheel — just
+          not guaranteed to be the absolute smallest possible.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================================================================
+       SECTION 7: FAQ
+       ================================================================ -->
+  <section class="wg-section" id="wg-faq" aria-labelledby="wg-faq-title">
+    <h2 class="wg-section-title" id="wg-faq-title">
+      <span aria-hidden="true">❓</span> Frequently Asked Questions
+    </h2>
+    <!-- FAQ items are built by JavaScript below -->
+    <div class="wg-faq" id="wg-faq-list" role="list"></div>
+  </section>
+
+</main>
+
+<footer class="wg-footer" role="contentinfo">
+  <!-- BRAND FOOTER — customize this text -->
+  <p>Wheel Generator &mdash; Client-side lottery covering design tool.</p>
+  <p class="wg-mt-1">All calculations run entirely in your browser. No data is ever sent to any server.</p>
+</footer>
+
+<script>
+/* ================================================================
+   WHEEL GENERATOR — Main Script
+   ================================================================
+   Security notes:
+     - No eval(), no new Function().
+     - No inline event handlers (all addEventListener).
+     - User text inserted via textContent only, never innerHTML.
+     - No external dependencies.
+   ================================================================ */
+(function () {
+  'use strict';
+
+  /* ============================================================
+     A: CONSTANTS
+     ============================================================ */
+
+  /** Max t-subsets to enumerate exactly. Above this → heuristic mode. */
+  var MAX_EXACT_TSUBSETS = 30000;
+
+  /** Max k-subsets to enumerate as candidates. Above this → sampling mode. */
+  var MAX_EXACT_KSUBSETS = 100000;
+
+  /** Random k-block candidates to sample per greedy round (heuristic). */
+  var HEURISTIC_SAMPLE_SIZE = 2500;
+
+  /** Safety cap on total blocks generated. */
+  var MAX_BLOCKS_SAFETY = 50000;
+
+  /* ============================================================
+     B: UTILITY FUNCTIONS
+     ============================================================ */
+
+  /**
+   * Binomial coefficient C(n, k).
+   * Returns Infinity when the result would overflow or be impractical.
+   * @param {number} n
+   * @param {number} k
+   * @returns {number}
+   */
+  function binomial(n, k) {
+    if (k < 0 || k > n) return 0;
+    if (k === 0 || k === n) return 1;
+    if (k > n - k) k = n - k;
+    var result = 1;
+    for (var i = 0; i < k; i++) {
+      result = result * (n - i) / (i + 1);
+      if (!isFinite(result)) return Infinity;
+    }
+    return Math.round(result);
+  }
+
+  /**
+   * Generate all k-combinations of the integers 1..n.
+   * Uses an iterative index-based algorithm.
+   * Yields sorted arrays.
+   * @param {number} n
+   * @param {number} k
+   * @yields {number[]}
+   */
+  function combinationsRange(n, k) {
+    /* Returns an object with a next() method (manual iterator). */
+    if (k <= 0 || k > n) return { next: function () { return { done: true }; } };
+    var idx = [];
+    for (var i = 0; i < k; i++) idx.push(i + 1);
+    var started = false;
+    return {
+      next: function () {
+        if (!started) {
+          started = true;
+          return { value: idx.slice(), done: false };
+        }
+        var j = k - 1;
+        while (j >= 0 && idx[j] === n - k + j + 1) j--;
+        if (j < 0) return { done: true };
+        idx[j]++;
+        for (var m = j + 1; m < k; m++) idx[m] = idx[m - 1] + 1;
+        return { value: idx.slice(), done: false };
+      }
+    };
+  }
+
+  /**
+   * Collect all results from a combinationsRange iterator into an array.
+   * @param {number} n
+   * @param {number} k
+   * @returns {number[][]}
+   */
+  function allCombinations(n, k) {
+    var result = [];
+    var it = combinationsRange(n, k);
+    var r;
+    while (!(r = it.next()).done) result.push(r.value);
+    return result;
+  }
+
+  /**
+   * Get all t-subsets of a given block.
+   * @param {number[]} block - sorted array
+   * @param {number} t
+   * @returns {number[][]}
+   */
+  function getTSubsets(block, t) {
+    var result = [];
+    var bLen = block.length;
+    if (t <= 0 || t > bLen) return result;
+    var idx = [];
+    for (var i = 0; i < t; i++) idx.push(i);
+    while (true) {
+      result.push(idx.map(function (x) { return block[x]; }));
+      var j = t - 1;
+      while (j >= 0 && idx[j] === bLen - t + j) j--;
+      if (j < 0) break;
+      idx[j]++;
+      for (var m = j + 1; m < t; m++) idx[m] = idx[m - 1] + 1;
+    }
+    return result;
+  }
+
+  /**
+   * Score a block by counting how many of its t-subsets are in uncoveredSet.
+   * @param {number[]} block
+   * @param {number} t
+   * @param {Set<string>} uncoveredSet
+   * @returns {number}
+   */
+  function scoreBlock(block, t, uncoveredSet) {
+    var subs = getTSubsets(block, t);
+    var count = 0;
+    for (var i = 0; i < subs.length; i++) {
+      if (uncoveredSet.has(subs[i].join(','))) count++;
+    }
+    return count;
+  }
+
+  /**
+   * Generate a random k-subset of {1..v}.
+   * @param {number} v
+   * @param {number} k
+   * @returns {number[]} sorted
+   */
+  function randomKSubset(v, k) {
+    var pool = [];
+    for (var i = 1; i <= v; i++) pool.push(i);
+    for (var a = 0; a < k; a++) {
+      var b = a + Math.floor(Math.random() * (v - a));
+      var tmp = pool[a]; pool[a] = pool[b]; pool[b] = tmp;
+    }
+    return pool.slice(0, k).sort(function (x, y) { return x - y; });
+  }
+
+  /**
+   * Generate a random k-subset of {1..v} that contains all of mustInclude.
+   * @param {number} v
+   * @param {number} k
+   * @param {number[]} mustInclude - sorted, length <= k
+   * @returns {number[]} sorted
+   */
+  function randomKSubsetContaining(v, k, mustInclude) {
+    var needed = k - mustInclude.length;
+    if (needed < 0) return mustInclude.slice(0, k).sort(function (x, y) { return x - y; });
+    var mustSet = {};
+    for (var i = 0; i < mustInclude.length; i++) mustSet[mustInclude[i]] = true;
+    var available = [];
+    for (var n = 1; n <= v; n++) {
+      if (!mustSet[n]) available.push(n);
+    }
+    for (var a = 0; a < needed && a < available.length; a++) {
+      var b = a + Math.floor(Math.random() * (available.length - a));
+      var tmp = available[a]; available[a] = available[b]; available[b] = tmp;
+    }
+    var extras = available.slice(0, needed);
+    return mustInclude.concat(extras).sort(function (x, y) { return x - y; });
+  }
+
+  /**
+   * Shuffle an array in place (Fisher-Yates).
+   * @param {Array} arr
+   */
+  function shuffleInPlace(arr) {
+    for (var i = arr.length - 1; i > 0; i--) {
+      var j = Math.floor(Math.random() * (i + 1));
+      var tmp = arr[i]; arr[i] = arr[j]; arr[j] = tmp;
+    }
+  }
+
+  /**
+   * Yield control back to the browser event loop.
+   * @param {number} [ms=0]
+   * @returns {Promise<void>}
+   */
+  function yieldControl(ms) {
+    return new Promise(function (resolve) {
+      setTimeout(resolve, ms === undefined ? 0 : ms);
+    });
+  }
+
+  /**
+   * Format a number with thousands separators.
+   * @param {number} n
+   * @returns {string}
+   */
+  function fmt(n) {
+    if (!isFinite(n)) return '\u221E'; /* ∞ */
+    return n.toLocaleString();
+  }
+
+  /**
+   * Format elapsed milliseconds as a readable string.
+   * @param {number} ms
+   * @returns {string}
+   */
+  function fmtTime(ms) {
+    if (ms < 1000) return ms + 'ms';
+    if (ms < 60000) return (ms / 1000).toFixed(1) + 's';
+    var m = Math.floor(ms / 60000);
+    var s = Math.round((ms % 60000) / 1000);
+    return m + 'm ' + s + 's';
+  }
+
+  /* ============================================================
+     C: VALIDATION
+     ============================================================ */
+
+  /**
+   * Validate wheel parameters.
+   * @param {number} v
+   * @param {number} k
+   * @param {number} t
+   * @param {number|null} maxTickets
+   * @returns {{ field: string, message: string }[]}
+   */
+  function validateParams(v, k, t, maxTickets) {
+    var errors = [];
+    if (!Number.isInteger(v) || v < 2 || v > 10000) {
+      errors.push({ field: 'v', message: 'Pool size must be a whole number between 2 and 10,000.' });
+    }
+    if (!Number.isInteger(k) || k < 2 || k > 500) {
+      errors.push({ field: 'k', message: 'Numbers per ticket must be a whole number between 2 and 500.' });
+    }
+    if (!Number.isInteger(t) || t < 1 || t > 100) {
+      errors.push({ field: 't', message: 'Guarantee level must be a whole number between 1 and 100.' });
+    }
+    if (Number.isInteger(k) && Number.isInteger(v) && k > v) {
+      errors.push({ field: 'k', message: 'Numbers per ticket (k) cannot be larger than the pool size (v).' });
+    }
+    if (Number.isInteger(t) && Number.isInteger(k) && t > k) {
+      errors.push({ field: 't', message: 'Guarantee level (t) cannot be larger than numbers per ticket (k).' });
+    }
+    if (maxTickets !== null && (!Number.isInteger(maxTickets) || maxTickets < 1)) {
+      errors.push({ field: 'general', message: 'Max tickets must be a positive whole number if provided.' });
+    }
+    return errors;
+  }
+
+  /* ============================================================
+     D: WHEEL ENGINE
+     ============================================================ */
+
+  /**
+   * WheelEngine handles the full generation lifecycle:
+   *   - Mode selection (exact / mixed / heuristic)
+   *   - Greedy set-cover with incremental scoring (exact mode)
+   *   - Greedy with random guided sampling (mixed / heuristic mode)
+   *   - Randomized restarts to find smaller wheels
+   *   - Redundancy pruning
+   *   - Exact verification (when feasible)
+   */
+  function WheelEngine(params, callbacks) {
+    this.v           = params.v;
+    this.k           = params.k;
+    this.t           = params.t;
+    this.restarts    = Math.max(1, params.restarts || 3);
+    this.timeLimitMs = (params.timeLimitSec || 30) * 1000;
+    this.maxTickets  = params.maxTickets || null;
+    this.callbacks   = callbacks;
+    this._stopped    = false;
+    this._startTime  = 0;
+
+    /* Determine generation mode. */
+    var nT = binomial(this.v, this.t);
+    var nK = binomial(this.v, this.k);
+    if (nT <= MAX_EXACT_TSUBSETS && nK <= MAX_EXACT_KSUBSETS) {
+      this.mode = 'exact';
+    } else if (nT <= MAX_EXACT_TSUBSETS) {
+      this.mode = 'mixed';   /* track t-subsets exactly, sample k-blocks */
+    } else {
+      this.mode = 'heuristic'; /* full heuristic */
+    }
+    this.totalTSubsets = nT;
+    this.totalKSubsets = nK;
+  }
+
+  WheelEngine.prototype.stop = function () {
+    this._stopped = true;
+  };
+
+  WheelEngine.prototype._timeUp = function () {
+    return (Date.now() - this._startTime) >= this.timeLimitMs;
+  };
+
+  WheelEngine.prototype._elapsed = function () {
+    return Date.now() - this._startTime;
+  };
+
+  /**
+   * Main entry point. Resolves when generation is complete or stopped.
+   */
+  WheelEngine.prototype.run = function () {
+    var self = this;
+    self._stopped   = false;
+    self._startTime = Date.now();
+    self.callbacks.onPhase('Starting up\u2026', 0);
+
+    var bestBlocks = null;
+    var bestCount  = Infinity;
+
+    var modeLabel = self.mode === 'exact' ? 'Exact'
+      : self.mode === 'mixed' ? 'Mixed (sampled)'
+      : 'Heuristic';
+
+    function runRestart(restart) {
+      if (restart > self.restarts || self._stopped || self._timeUp()) {
+        return Promise.resolve();
+      }
+      self.callbacks.onPhase(
+        'Pass ' + restart + ' / ' + self.restarts + ' \u2014 Mode: ' + modeLabel, 0
+      );
+      var p;
+      if (self.mode === 'exact') {
+        p = self._runExact();
+      } else {
+        p = self._runSampling();
+      }
+      return p.then(function (blocks) {
+        if (blocks !== null && blocks.length < bestCount) {
+          bestCount  = blocks.length;
+          bestBlocks = blocks;
+        }
+        return runRestart(restart + 1);
+      });
+    }
+
+    return runRestart(1).then(function () {
+      if (self._stopped && bestBlocks === null) {
+        self.callbacks.onStopped(null, self._elapsed());
+        return;
+      }
+
+      /* Prune redundant tickets from best result. */
+      var prunePromise = (bestBlocks && bestBlocks.length > 0)
+        ? (self.callbacks.onPhase('Removing any redundant tickets\u2026', 95),
+           yieldControl().then(function () { return self._pruneBlocks(bestBlocks); }))
+        : Promise.resolve(bestBlocks || []);
+
+      return prunePromise.then(function (pruned) {
+        bestBlocks = pruned;
+
+        /* Verify if feasible. */
+        var verification;
+        if (self.mode === 'exact' || self.mode === 'mixed') {
+          self.callbacks.onPhase('Verifying coverage\u2026', 98);
+          verification = self._verify(bestBlocks);
+        } else {
+          verification = { status: 'heuristic', covered: null, total: null, missing: [] };
+        }
+
+        self.callbacks.onPhase('Done!', 100);
+        self.callbacks.onDone(bestBlocks, verification, self._elapsed(), self.mode);
+      });
+    }).catch(function (err) {
+      self.callbacks.onPhase('Error: ' + String(err), 0);
+      self.callbacks.onStopped(bestBlocks, self._elapsed());
+    });
+  };
+
+  /* -----------------------------------------------------------
+     EXACT MODE
+     Enumerate all k-subsets + t-subsets, use incremental scoring
+     via an inverted index for fast greedy selection.
+     ----------------------------------------------------------- */
+  WheelEngine.prototype._runExact = function () {
+    var self = this;
+    var v = self.v, k = self.k, t = self.t;
+
+    /* Phase 1: Collect all k-subsets. */
+    self.callbacks.onPhase('Building candidate tickets\u2026', 5);
+    return yieldControl().then(function () {
+      var allBlocks = allCombinations(v, k);
+      shuffleInPlace(allBlocks); /* randomize for restart variety */
+
+      /* Phase 2: Build t-subset index. */
+      self.callbacks.onPhase('Computing patterns to cover\u2026', 20);
+      var tSubKeyToIdx = {};
+      var tCount = 0;
+      var it = combinationsRange(v, t);
+      var r;
+      while (!(r = it.next()).done) {
+        tSubKeyToIdx[r.value.join(',')] = tCount++;
+      }
+      var numT = tCount;
+      var numK = allBlocks.length;
+
+      /* Phase 3: For each k-block, list its t-subset indices. */
+      self.callbacks.onPhase('Building coverage index\u2026', 30);
+      var blockTSubs = new Array(numK);
+      for (var i = 0; i < numK; i++) {
+        var subs = getTSubsets(allBlocks[i], t);
+        var indices = new Array(subs.length);
+        for (var s = 0; s < subs.length; s++) {
+          indices[s] = tSubKeyToIdx[subs[s].join(',')];
+        }
+        blockTSubs[i] = indices;
+      }
+
+      /* Phase 4: Build inverted index: for each t-subset, which k-blocks cover it. */
+      self.callbacks.onPhase('Preparing inverted index\u2026', 45);
+      var tSubBlocks = new Array(numT);
+      for (var ti = 0; ti < numT; ti++) tSubBlocks[ti] = [];
+      for (var bi = 0; bi < numK; bi++) {
+        var tsubs = blockTSubs[bi];
+        for (var si = 0; si < tsubs.length; si++) {
+          tSubBlocks[tsubs[si]].push(bi);
+        }
+      }
+
+      /* Phase 5: Initialize scores. */
+      self.callbacks.onPhase('Running greedy selection\u2026', 55);
+      var scores  = new Int32Array(numK);
+      for (var ci = 0; ci < numK; ci++) scores[ci] = blockTSubs[ci].length;
+      var covered     = new Uint8Array(numT);
+      var numUncovered = numT;
+      var selected    = [];
+
+      /* Phase 6: Async greedy loop — yield control after each selected block. */
+      function greedyStep() {
+        if (numUncovered === 0) return Promise.resolve(selected);
+        if (self._stopped || self._timeUp()) return Promise.resolve(selected);
+        if (self.maxTickets !== null && selected.length >= self.maxTickets) return Promise.resolve(selected);
+        if (selected.length >= MAX_BLOCKS_SAFETY) return Promise.resolve(selected);
+
+        /* Linear scan for best-scoring block. */
+        var bestIdx   = -1;
+        var bestScore = 0;
+        for (var li = 0; li < numK; li++) {
+          if (scores[li] > bestScore) { bestScore = scores[li]; bestIdx = li; }
+        }
+        if (bestIdx === -1 || bestScore <= 0) return Promise.resolve(selected);
+
+        selected.push(allBlocks[bestIdx]);
+
+        /* Update covered set and propagate score decrements. */
+        var pickedSubs = blockTSubs[bestIdx];
+        for (var pi = 0; pi < pickedSubs.length; pi++) {
+          var tidx = pickedSubs[pi];
+          if (!covered[tidx]) {
+            covered[tidx] = 1;
+            numUncovered--;
+            var affectedBlocks = tSubBlocks[tidx];
+            for (var ai = 0; ai < affectedBlocks.length; ai++) {
+              if (scores[affectedBlocks[ai]] > 0) scores[affectedBlocks[ai]]--;
+            }
+          }
+        }
+        scores[bestIdx] = 0; /* mark as used */
+
+        var progress = 55 + Math.round(40 * (numT - numUncovered) / numT);
+        self.callbacks.onRound(selected.length, numUncovered, progress);
+
+        return yieldControl().then(greedyStep);
+      }
+
+      return greedyStep();
+    });
+  };
+
+  /* -----------------------------------------------------------
+     SAMPLING MODE
+     Used when C(v,k) > MAX_EXACT_KSUBSETS.
+     T-subsets tracked exactly if feasible; otherwise sampled.
+     ----------------------------------------------------------- */
+  WheelEngine.prototype._runSampling = function () {
+    var self = this;
+    var v = self.v, k = self.k, t = self.t;
+    var exactT = (self.totalTSubsets <= MAX_EXACT_TSUBSETS);
+
+    /* Build uncovered set. */
+    self.callbacks.onPhase(
+      exactT ? 'Computing patterns to cover\u2026' : 'Sampling patterns (large mode)\u2026', 10
+    );
+
+    return yieldControl().then(function () {
+      var uncoveredSet = new Set();
+
+      if (exactT) {
+        var it = combinationsRange(v, t);
+        var r;
+        while (!(r = it.next()).done) uncoveredSet.add(r.value.join(','));
+      } else {
+        /* Sample a large number of random t-subsets as a proxy for tracking. */
+        var targetSample = Math.min(
+          20000, Math.max(5000, Math.floor(binomial(v, t) * 0.1))
+        );
+        for (var si = 0; si < targetSample; si++) {
+          uncoveredSet.add(randomKSubset(v, t).join(','));
+        }
+      }
+
+      var numT       = uncoveredSet.size;
+      var selected   = [];
+      var stuckCount = 0;
+      var MAX_STUCK  = 150;
+
+      self.callbacks.onPhase('Running greedy selection (sampling)\u2026', 20);
+
+      function samplingStep() {
+        if (uncoveredSet.size === 0) return Promise.resolve(selected);
+        if (self._stopped || self._timeUp()) return Promise.resolve(selected);
+        if (self.maxTickets !== null && selected.length >= self.maxTickets) return Promise.resolve(selected);
+        if (selected.length >= MAX_BLOCKS_SAFETY) return Promise.resolve(selected);
+
+        var uncoveredKeys = Array.from(uncoveredSet);
+        var bestBlock = null;
+        var bestScore = 0;
+        var numSamples = Math.min(HEURISTIC_SAMPLE_SIZE, 500 + selected.length * 3);
+
+        for (var si = 0; si < numSamples; si++) {
+          var cand;
+          /* 60% guided (extend a random uncovered t-subset to a k-block). */
+          if (si < numSamples * 0.6 && uncoveredKeys.length > 0) {
+            var targetKey  = uncoveredKeys[Math.floor(Math.random() * uncoveredKeys.length)];
+            var targetNums = targetKey.split(',').map(Number);
+            cand = (targetNums.length <= k)
+              ? randomKSubsetContaining(v, k, targetNums)
+              : randomKSubset(v, k);
+          } else {
+            cand = randomKSubset(v, k);
+          }
+          var score = scoreBlock(cand, t, uncoveredSet);
+          if (score > bestScore) { bestScore = score; bestBlock = cand; }
+        }
+
+        if (bestBlock && bestScore > 0) {
+          selected.push(bestBlock);
+          var subs = getTSubsets(bestBlock, t);
+          for (var i = 0; i < subs.length; i++) uncoveredSet.delete(subs[i].join(','));
+          stuckCount = 0;
+          var progress = 20 + Math.round(75 * (numT - uncoveredSet.size) / Math.max(numT, 1));
+          self.callbacks.onRound(selected.length, uncoveredSet.size, progress);
+        } else {
+          stuckCount++;
+          if (stuckCount >= MAX_STUCK) {
+            /* Force-add a random block to break the stall. */
+            var randBlock = randomKSubset(v, k);
+            selected.push(randBlock);
+            var rsubs = getTSubsets(randBlock, t);
+            for (var ri = 0; ri < rsubs.length; ri++) uncoveredSet.delete(rsubs[ri].join(','));
+            stuckCount = 0;
+          }
+        }
+
+        return yieldControl().then(samplingStep);
+      }
+
+      return samplingStep();
+    });
+  };
+
+  /* -----------------------------------------------------------
+     REDUNDANCY PRUNING
+     Try removing each block; keep it only if removing it would
+     leave some t-subset uncovered by the remaining blocks.
+     ----------------------------------------------------------- */
+  WheelEngine.prototype._pruneBlocks = function (blocks) {
+    var self = this;
+    if (blocks.length === 0 || self.totalTSubsets > MAX_EXACT_TSUBSETS) {
+      return Promise.resolve(blocks);
+    }
+
+    /* Build a coverage-count map: how many blocks cover each t-subset. */
+    var coverCount = {};
+    for (var i = 0; i < blocks.length; i++) {
+      var subs = getTSubsets(blocks[i], self.t);
+      for (var s = 0; s < subs.length; s++) {
+        var key = subs[s].join(',');
+        coverCount[key] = (coverCount[key] || 0) + 1;
+      }
+    }
+
+    /* A block is redundant if every t-subset it covers has count >= 2
+       (i.e., covered by at least one other block too). */
+    var pruned = [];
+    for (var bi = 0; bi < blocks.length; bi++) {
+      var blockSubs = getTSubsets(blocks[bi], self.t);
+      var isRedundant = true;
+      for (var si = 0; si < blockSubs.length; si++) {
+        var k2 = blockSubs[si].join(',');
+        if ((coverCount[k2] || 0) < 2) { isRedundant = false; break; }
+      }
+      if (isRedundant) {
+        /* Decrement counts since this block is removed. */
+        for (var di = 0; di < blockSubs.length; di++) {
+          var dk = blockSubs[di].join(',');
+          if (coverCount[dk]) coverCount[dk]--;
+        }
+      } else {
+        pruned.push(blocks[bi]);
+      }
+    }
+
+    return Promise.resolve(pruned);
+  };
+
+  /* -----------------------------------------------------------
+     VERIFICATION
+     Check that every C(v,t) t-subset is covered by at least one block.
+     ----------------------------------------------------------- */
+  WheelEngine.prototype._verify = function (blocks) {
+    var self = this;
+    if (self.totalTSubsets > MAX_EXACT_TSUBSETS) {
+      return { status: 'heuristic', covered: null, total: null, missing: [] };
+    }
+
+    var covered = {};
+    for (var bi = 0; bi < blocks.length; bi++) {
+      var subs = getTSubsets(blocks[bi], self.t);
+      for (var si = 0; si < subs.length; si++) covered[subs[si].join(',')] = true;
+    }
+
+    var missing = [];
+    var total = self.totalTSubsets;
+    var it = combinationsRange(self.v, self.t);
+    var r;
+    while (!(r = it.next()).done) {
+      if (!covered[r.value.join(',')]) {
+        missing.push(r.value);
+        if (missing.length > 20) break; /* cap for display */
+      }
+    }
+
+    if (missing.length === 0) {
+      return { status: 'verified', covered: total, total: total, missing: [] };
+    }
+    return {
+      status: 'partial',
+      covered: total - missing.length,
+      total: total,
+      missing: missing.slice(0, 10)
+    };
+  };
+
+  /* ============================================================
+     E: EXPORTERS
+     ============================================================ */
+
+  function toTXT(blocks, params, verification) {
+    var lines = [];
+    lines.push('=== WHEEL GENERATOR RESULTS ===');
+    lines.push('Generated: ' + new Date().toISOString());
+    lines.push('');
+    lines.push('Parameters:');
+    lines.push('  Pool size (v):     ' + params.v);
+    lines.push('  Ticket size (k):   ' + params.k);
+    lines.push('  Guarantee (t):     ' + params.t);
+    lines.push('  Number of tickets: ' + blocks.length);
+    lines.push('');
+    lines.push('Verification status: ' + verification.status);
+    if (verification.covered !== null) {
+      lines.push('  Patterns covered: ' + verification.covered + ' / ' + verification.total);
+    }
+    lines.push('');
+    lines.push('Tickets:');
+    for (var i = 0; i < blocks.length; i++) {
+      var num = String(i + 1);
+      while (num.length < 4) num = ' ' + num;
+      lines.push('  ' + num + ': ' + blocks[i].join('  '));
+    }
+    lines.push('');
+    lines.push('=== END ===');
+    return lines.join('\n');
+  }
+
+  function toJSON(blocks, params, verification) {
+    var obj = {
+      meta: {
+        tool: 'Wheel Generator',
+        generated: new Date().toISOString(),
+        parameters: { v: params.v, k: params.k, t: params.t },
+        ticketCount: blocks.length,
+        verification: {
+          status: verification.status,
+          patternsCovered: verification.covered,
+          patternsTotal: verification.total
+        }
+      },
+      tickets: blocks
+    };
+    return JSON.stringify(obj, null, 2);
+  }
+
+  function downloadFile(content, filename, mimeType) {
+    var blob   = new Blob([content], { type: mimeType });
+    var url    = URL.createObjectURL(blob);
+    var anchor = document.createElement('a');
+    anchor.href     = url;
+    anchor.download = filename;
+    anchor.style.display = 'none';
+    document.body.appendChild(anchor);
+    anchor.click();
+    setTimeout(function () {
+      URL.revokeObjectURL(url);
+      document.body.removeChild(anchor);
+    }, 1000);
+  }
+
+  /* ============================================================
+     F: UI CONTROLLER
+     ============================================================ */
+
+  var state = {
+    engine:            null,
+    running:           false,
+    resultBlocks:      null,
+    resultVerification:null,
+    resultParams:      null,
+    elapsedMs:         0,
+    timerInterval:     null
+  };
+
+  function el(id)           { return document.getElementById(id); }
+  function setText(id, txt) { var n = el(id); if (n) n.textContent = String(txt); }
+
+  function setProgress(pct, label, phase) {
+    var fill = el('wg-progress-fill');
+    var role = el('wg-progress-bar-role');
+    if (!fill || !role) return;
+    var p = Math.max(0, Math.min(100, pct));
+    fill.style.width = p + '%';
+    fill.classList.remove('is-indeterminate');
+    role.setAttribute('aria-valuenow', String(p));
+    if (label !== undefined) setText('wg-phase-text', label);
+    if (phase !== undefined) setText('wg-phase-text', phase);
+  }
+
+  function setIndeterminate(label) {
+    var fill = el('wg-progress-fill');
+    if (fill) fill.classList.add('is-indeterminate');
+    if (label !== undefined) setText('wg-phase-text', label);
+  }
+
+  function showSection(id, visible) {
+    var node = el(id);
+    if (!node) return;
+    if (visible) node.classList.add('is-visible');
+    else         node.classList.remove('is-visible');
+  }
+
+  function setButtonStates(running, hasResult) {
+    var btnGen  = el('wg-btn-generate');
+    var btnStop = el('wg-btn-stop');
+    var btnClr  = el('wg-btn-clear');
+    var btnTxt  = el('wg-btn-export-txt');
+    var btnJson = el('wg-btn-export-json');
+    var btnCopy = el('wg-btn-copy');
+
+    if (btnGen)  btnGen.disabled  = running;
+    if (btnStop) btnStop.disabled = !running;
+    if (btnClr)  btnClr.disabled  = running || !hasResult;
+    if (btnTxt)  btnTxt.disabled  = running || !hasResult;
+    if (btnJson) btnJson.disabled = running || !hasResult;
+    if (btnCopy) btnCopy.disabled = running || !hasResult;
+  }
+
+  function startTimer() {
+    var start = Date.now();
+    state.timerInterval = setInterval(function () {
+      setText('wg-stat-time', fmtTime(Date.now() - start));
+    }, 250);
+  }
+
+  function stopTimer() {
+    if (state.timerInterval) {
+      clearInterval(state.timerInterval);
+      state.timerInterval = null;
+    }
+  }
+
+  /* ---- Dynamic description panel ---- */
+  function updateDescription() {
+    var v = parseInt(el('wg-v').value, 10);
+    var k = parseInt(el('wg-k').value, 10);
+    var t = parseInt(el('wg-t').value, 10);
+    var panel = el('wg-desc');
+    if (!panel) return;
+
+    if (isNaN(v) || isNaN(k) || isNaN(t)) {
+      panel.textContent = 'Enter your parameters above to see a plain-English summary here.';
+      panel.className = 'wg-desc-panel wg-mt-2';
+      return;
+    }
+
+    var nT = binomial(v, t);
+    var nK = binomial(v, k);
+    var msg = 'You are building tickets with ' + k + ' number' + (k === 1 ? '' : 's') +
+              ' each, chosen from a pool of ' + v + '. ' +
+              'The wheel will make sure every group of ' + t + ' number' + (t === 1 ? '' : 's') +
+              ' appears on at least one ticket. ' +
+              'There are ' + fmt(nT) + ' such group' + (nT === 1 ? '' : 's') + ' to cover.';
+
+    var isWarning = false;
+    if (nK > MAX_EXACT_KSUBSETS || nT > MAX_EXACT_TSUBSETS) {
+      msg += ' \u26a0\ufe0f This is a large job \u2014 the tool will use smart sampling and the result will be marked as a heuristic estimate.';
+      isWarning = true;
+    } else if (nK > 10000) {
+      msg += ' \u23f3 This may take a few seconds.';
+    }
+
+    panel.textContent = msg;
+    panel.className = 'wg-desc-panel wg-mt-2' + (isWarning ? ' wg-desc--warning' : '');
+  }
+
+  /* ---- Show form errors ---- */
+  function showFormErrors(errors) {
+    /* Clear all previous errors first. */
+    ['v','k','t'].forEach(function (f) {
+      var field = el('wg-field-' + f);
+      var errEl = el('wg-' + f + '-err');
+      if (field) field.classList.remove('has-error');
+      if (errEl) errEl.textContent = '';
+    });
+    el('wg-form-error').classList.add('wg-alert--hidden');
+
+    if (errors.length === 0) return;
+
+    var generalMsgs = [];
+    errors.forEach(function (e) {
+      if (e.field === 'general') {
+        generalMsgs.push(e.message);
+      } else {
+        var field = el('wg-field-' + e.field);
+        var errEl = el('wg-' + e.field + '-err');
+        if (field) field.classList.add('has-error');
+        if (errEl) errEl.textContent = e.message;
+      }
+    });
+
+    if (generalMsgs.length > 0 || errors.length > 0) {
+      var errBox = el('wg-form-error');
+      var errTxt = el('wg-form-error-text');
+      var summary = errors.map(function (e) { return e.message; }).join(' ');
+      errTxt.textContent = summary;
+      errBox.classList.remove('wg-alert--hidden');
+    }
+  }
+
+  /* ---- Render results ---- */
+  function renderResults(blocks, verification, params, elapsedMs) {
+    state.resultBlocks       = blocks;
+    state.resultVerification = verification;
+    state.resultParams       = params;
+    state.elapsedMs          = elapsedMs;
+
+    showSection('wg-results-section', true);
+
+    /* Summary stats */
+    var summaryEl = el('wg-results-summary');
+    summaryEl.innerHTML = ''; /* safe — we control the HTML here */
+    var stats = [
+      { label: 'Tickets',       value: blocks.length },
+      { label: 'Pool size (v)', value: params.v },
+      { label: 'Ticket size (k)',value: params.k },
+      { label: 'Guarantee (t)', value: params.t },
+      { label: 'Time taken',    value: fmtTime(elapsedMs) }
+    ];
+    stats.forEach(function (s) {
+      var card = document.createElement('div');
+      card.className = 'wg-stat';
+      var lbl = document.createElement('div');
+      lbl.className = 'wg-stat__label';
+      lbl.textContent = s.label;
+      var val = document.createElement('div');
+      val.className = 'wg-stat__value';
+      val.textContent = String(s.value);
+      card.appendChild(lbl);
+      card.appendChild(val);
+      summaryEl.appendChild(card);
+    });
+
+    /* Verification badge */
+    var badgeEl = el('wg-verification-badge');
+    badgeEl.innerHTML = '';
+    var badge = document.createElement('span');
+    var msgEl = el('wg-results-message');
+    var alertEl  = el('wg-result-alert');
+    var alertIcon= el('wg-result-alert-icon');
+    var alertTxt = el('wg-result-alert-text');
+
+    alertEl.className = 'wg-alert wg-alert--hidden';
+
+    if (verification.status === 'verified') {
+      badge.className   = 'wg-badge wg-badge--success';
+      badge.textContent = '\u2705 Fully Verified';
+      msgEl.textContent = 'Great news! Every required pattern was found on at least one ticket. ' +
+        'Coverage is complete and has been fully checked.';
+    } else if (verification.status === 'partial') {
+      badge.className   = 'wg-badge wg-badge--warning';
+      badge.textContent = '\u26a0\ufe0f Partially Covered';
+      msgEl.textContent = 'The wheel covers ' + fmt(verification.covered) + ' of ' +
+        fmt(verification.total) + ' patterns. Some patterns may be missing — ' +
+        'try running again with more restarts or a higher time limit.';
+      alertEl.className    = 'wg-alert wg-alert--warning';
+      alertIcon.textContent= '\u26a0\ufe0f';
+      alertTxt.textContent = 'Coverage is incomplete. Shown result is the best found within the time limit.';
+    } else {
+      badge.className   = 'wg-badge wg-badge--info';
+      badge.textContent = '\u2139\ufe0f Heuristic Result';
+      msgEl.textContent = 'This is a best-effort result. The pool size is large, so full verification ' +
+        'was not possible in the browser. The wheel is likely very good but is not guaranteed to ' +
+        'be the smallest possible or 100% verified.';
+      alertEl.className    = 'wg-alert wg-alert--info';
+      alertIcon.textContent= '\u2139\ufe0f';
+      alertTxt.textContent = 'Large-problem mode: result is heuristic. Not guaranteed to be optimal or fully verified.';
+    }
+    badgeEl.appendChild(badge);
+
+    /* Ticket table */
+    var tbody = el('wg-results-tbody');
+    tbody.innerHTML = '';
+    blocks.forEach(function (block, idx) {
+      var tr = document.createElement('tr');
+
+      var tdNum = document.createElement('td');
+      tdNum.textContent = String(idx + 1);
+
+      var tdNums = document.createElement('td');
+      var chipWrap = document.createElement('div');
+      chipWrap.className = 'wg-ticket-numbers';
+      block.forEach(function (n) {
+        var chip = document.createElement('span');
+        chip.className   = 'wg-num-chip';
+        chip.textContent = String(n);
+        chipWrap.appendChild(chip);
+      });
+      tdNums.appendChild(chipWrap);
+
+      tr.appendChild(tdNum);
+      tr.appendChild(tdNums);
+      tbody.appendChild(tr);
+    });
+
+    /* Scroll to results. */
+    el('wg-results-section').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  /* ---- Clear results ---- */
+  function clearResults() {
+    state.resultBlocks        = null;
+    state.resultVerification  = null;
+    state.resultParams        = null;
+    showSection('wg-results-section', false);
+    showSection('wg-progress-section', false);
+    setText('wg-results-tbody', '');
+    el('wg-results-summary').innerHTML = '';
+    el('wg-verification-badge').innerHTML = '';
+    setText('wg-results-message', '');
+    setButtonStates(false, false);
+  }
+
+  /* ---- Build FAQ ---- */
+  var FAQ_DATA = [
+    {
+      q: 'Is this guaranteed to find the smallest possible wheel?',
+      a: 'No — finding the mathematically smallest wheel is an extremely hard problem ' +
+         '(computer scientists call it NP-hard). This tool tries hard to find a compact wheel ' +
+         'using smart greedy selection and multiple random restarts, but it cannot guarantee ' +
+         'the absolute minimum. Results are marked "Verified" when coverage is confirmed, but ' +
+         'the wheel might still not be the very smallest one possible.'
+    },
+    {
+      q: 'Why can large wheels take longer to generate?',
+      a: 'For a pool of 49 numbers and ticket size 6, there are nearly 14 million possible ' +
+         'tickets to consider. Scoring every single one each round would freeze the browser ' +
+         'for minutes. The tool handles this by randomly sampling a smaller batch of promising ' +
+         'candidates each round, which keeps the browser responsive while still finding a good result.'
+    },
+    {
+      q: 'What does "Verified" mean?',
+      a: '"Verified" means the tool checked every single required pattern and confirmed that at ' +
+         'least one ticket in the wheel covers it. This is only possible when the total number ' +
+         'of patterns is manageable (under 30,000). For very large jobs the result is marked ' +
+         '"Heuristic" because exhaustive checking would take too long.'
+    },
+    {
+      q: 'What is the difference between a "good" wheel and an "optimal" wheel?',
+      a: 'An optimal wheel uses the fewest possible tickets to achieve full coverage. A good ' +
+         'wheel also achieves full coverage but might use a few more tickets than the theoretical ' +
+         'minimum. For most practical purposes a good wheel is perfectly fine — the savings from ' +
+         'finding a truly optimal one are rarely worth the extra computational cost.'
+    },
+    {
+      q: 'Can I use this for different lottery or pool-coverage rules?',
+      a: 'Yes! The three parameters (pool size, ticket size, guarantee level) work for any ' +
+         'covering-design problem, not just standard lotteries. You could use it for pool picks, ' +
+         'sports tipping pools, test-case coverage, or any situation where you want a compact ' +
+         'set of selections that guarantees you catch certain patterns.'
+    },
+    {
+      q: 'Will this page send my data to a server?',
+      a: 'No. Everything runs entirely inside your browser. No data is ever sent anywhere. ' +
+         'You can even disconnect from the internet after loading the page and it will still work.'
+    }
+  ];
+
+  function buildFAQ() {
+    var list = el('wg-faq-list');
+    if (!list) return;
+    FAQ_DATA.forEach(function (item, idx) {
+      var wrapper  = document.createElement('div');
+      wrapper.className = 'wg-faq-item';
+      wrapper.setAttribute('role', 'listitem');
+
+      var btnId  = 'wg-faq-btn-'  + idx;
+      var answId = 'wg-faq-ans-'  + idx;
+
+      var btn = document.createElement('button');
+      btn.className = 'wg-faq-question';
+      btn.type = 'button';
+      btn.id   = btnId;
+      btn.setAttribute('aria-expanded', 'false');
+      btn.setAttribute('aria-controls', answId);
+
+      var questionText = document.createElement('span');
+      questionText.textContent = item.q;
+
+      var chevron = document.createElement('span');
+      chevron.className = 'wg-faq-chevron';
+      chevron.textContent = '\u25be'; /* ▾ */
+      chevron.setAttribute('aria-hidden', 'true');
+
+      btn.appendChild(questionText);
+      btn.appendChild(chevron);
+
+      var answer = document.createElement('div');
+      answer.className = 'wg-faq-answer';
+      answer.id = answId;
+      answer.setAttribute('role', 'region');
+      answer.setAttribute('aria-labelledby', btnId);
+      answer.textContent = item.a;
+
+      btn.addEventListener('click', function () {
+        var open = wrapper.classList.toggle('is-open');
+        btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+      });
+
+      wrapper.appendChild(btn);
+      wrapper.appendChild(answer);
+      list.appendChild(wrapper);
+    });
+  }
+
+  /* ---- Read form values ---- */
+  function readForm() {
+    return {
+      v:           parseInt(el('wg-v').value, 10),
+      k:           parseInt(el('wg-k').value, 10),
+      t:           parseInt(el('wg-t').value, 10),
+      maxTickets:  el('wg-maxtickets').value.trim()
+                    ? parseInt(el('wg-maxtickets').value, 10) : null,
+      restarts:    parseInt(el('wg-restarts').value, 10),
+      timeLimitSec:parseInt(el('wg-timelimit').value, 10)
+    };
+  }
+
+  /* ---- Main generate handler ---- */
+  function handleGenerate() {
+    var params = readForm();
+    var errors = validateParams(params.v, params.k, params.t, params.maxTickets);
+    showFormErrors(errors);
+    if (errors.length > 0) return;
+
+    clearResults();
+    state.running = true;
+    setButtonStates(true, false);
+    showSection('wg-progress-section', true);
+
+    setText('wg-stat-tickets',   '0');
+    setText('wg-stat-uncovered', '—');
+    var modeLabel = '';
+    var nT = binomial(params.v, params.t);
+    var nK = binomial(params.v, params.k);
+    if (nT <= MAX_EXACT_TSUBSETS && nK <= MAX_EXACT_KSUBSETS) modeLabel = 'Exact';
+    else if (nT <= MAX_EXACT_TSUBSETS) modeLabel = 'Mixed';
+    else modeLabel = 'Heuristic';
+    setText('wg-stat-mode', modeLabel);
+    setIndeterminate('Initializing\u2026');
+    startTimer();
+
+    var callbacks = {
+      onPhase: function (label, pct) {
+        setText('wg-phase-text', label);
+        if (pct > 0) setProgress(pct, label);
+        else setIndeterminate(label);
+      },
+      onProgress: function (pct) {
+        setProgress(pct);
+      },
+      onRound: function (tickets, uncovered, pct) {
+        setText('wg-stat-tickets',   fmt(tickets));
+        setText('wg-stat-uncovered', uncovered !== undefined ? fmt(uncovered) : '—');
+        if (pct !== undefined) setProgress(pct);
+      },
+      onDone: function (blocks, verification, elapsed, mode) {
+        stopTimer();
+        state.running = false;
+        setButtonStates(false, blocks.length > 0);
+        setProgress(100, 'Done!');
+        setText('wg-stat-time', fmtTime(elapsed));
+        setText('wg-stat-tickets', fmt(blocks.length));
+        setText('wg-stat-uncovered', verification.covered !== null
+          ? fmt(verification.total - verification.covered) : '—');
+        renderResults(blocks, verification, params, elapsed);
+      },
+      onStopped: function (blocks, elapsed) {
+        stopTimer();
+        state.running = false;
+        if (blocks && blocks.length > 0) {
+          setButtonStates(false, true);
+          renderResults(blocks, { status: 'heuristic', covered: null, total: null, missing: [] }, params, elapsed);
+        } else {
+          setButtonStates(false, false);
+          setProgress(0, 'Stopped by user.');
+        }
+      }
+    };
+
+    state.engine = new WheelEngine(params, callbacks);
+    state.engine.run();
+  }
+
+  /* ---- Event bindings ---- */
+  function bindEvents() {
+    /* Generate */
+    el('wg-btn-generate').addEventListener('click', handleGenerate);
+
+    /* Stop */
+    el('wg-btn-stop').addEventListener('click', function () {
+      if (state.engine) state.engine.stop();
+    });
+
+    /* Clear */
+    el('wg-btn-clear').addEventListener('click', clearResults);
+
+    /* Export TXT */
+    el('wg-btn-export-txt').addEventListener('click', function () {
+      if (!state.resultBlocks) return;
+      var content = toTXT(state.resultBlocks, state.resultParams, state.resultVerification);
+      downloadFile(content, 'wheel-result.txt', 'text/plain');
+    });
+
+    /* Export JSON */
+    el('wg-btn-export-json').addEventListener('click', function () {
+      if (!state.resultBlocks) return;
+      var content = toJSON(state.resultBlocks, state.resultParams, state.resultVerification);
+      downloadFile(content, 'wheel-result.json', 'application/json');
+    });
+
+    /* Copy to clipboard */
+    el('wg-btn-copy').addEventListener('click', function () {
+      if (!state.resultBlocks) return;
+      var text = toTXT(state.resultBlocks, state.resultParams, state.resultVerification);
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(function () {
+          var btn = el('wg-btn-copy');
+          var original = btn.textContent;
+          btn.textContent = '\u2713 Copied!';
+          setTimeout(function () { btn.textContent = original; }, 2000);
+        }).catch(function () {
+          /* Fallback: silent failure — clipboard API may be blocked in some contexts. */
+        });
+      }
+    });
+
+    /* Preset dropdown */
+    el('wg-preset').addEventListener('change', function () {
+      var val = el('wg-preset').value;
+      if (!val) return;
+      var parts = val.split(',');
+      if (parts.length !== 3) return;
+      el('wg-v').value = parts[0].trim();
+      el('wg-k').value = parts[1].trim();
+      el('wg-t').value = parts[2].trim();
+      updateDescription();
+      /* Reset preset selector so it can be re-chosen. */
+      el('wg-preset').value = '';
+    });
+
+    /* Live description update on parameter change. */
+    ['wg-v','wg-k','wg-t'].forEach(function (id) {
+      el(id).addEventListener('input', updateDescription);
+      el(id).addEventListener('change', updateDescription);
+    });
+  }
+
+  /* ---- Init ---- */
+  function init() {
+    buildFAQ();
+    bindEvents();
+    updateDescription();
+    setButtonStates(false, false);
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+
+}());
+</script>
+</body>
+</html>
