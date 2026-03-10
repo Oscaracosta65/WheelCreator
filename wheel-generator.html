@@ -1,0 +1,2354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!--
+    ================================================================
+    WHEEL GENERATOR — Client-side Lottery Covering Design Generator
+    ================================================================
+    Joomla 5.x setup:
+      1. Create a Custom HTML module or article.
+      2. Switch to HTML/Source view (not WYSIWYG).
+      3. Paste the entire contents of this file.
+      4. Save and publish.
+
+    Brand customization:
+      - Edit the CSS :root block to change colors, fonts, and shapes.
+      - Replace the emoji in .wg-logo with your <img> tag.
+      - Change the <h1> and tagline text in the <header>.
+
+    Limits note:
+      - This runs entirely in your browser — no server, no database.
+      - For small/medium jobs (e.g. 25 from 25, tickets of 5) the result
+        is fully verified. For large jobs (e.g. 49/6) it uses smart
+        shortcuts and tells you honestly what was checked.
+    ================================================================
+  -->
+  <title>Wheel Generator</title>
+  <style>
+    /* ============================================================
+       BRAND VARIABLES
+       Edit ONLY this block to re-skin the entire page.
+       ============================================================ */
+    :root {
+      /* Primary brand color — buttons, links, highlights */
+      --brand-primary:    #2563eb;
+      /* Darker shade — headings, hover states */
+      --brand-secondary:  #1e40af;
+      /* Accent — badges, progress bar, callout highlights */
+      --brand-accent:     #f59e0b;
+      /* Page background */
+      --surface-bg:       #f1f5f9;
+      /* Card / panel background */
+      --surface-card:     #ffffff;
+      /* Card border */
+      --surface-border:   #e2e8f0;
+      /* Input background */
+      --surface-input:    #f8fafc;
+      /* Main text */
+      --text-primary:     #0f172a;
+      /* Body text */
+      --text-secondary:   #475569;
+      /* Helper / placeholder text */
+      --text-muted:       #94a3b8;
+      /* Text on colored surfaces */
+      --text-on-primary:  #ffffff;
+      /* Semantic colours */
+      --color-success:    #10b981;
+      --color-warning:    #f59e0b;
+      --color-error:      #ef4444;
+      --color-info:       #3b82f6;
+      /* Hero gradient */
+      --hero-from:        #1e3a8a;
+      --hero-to:          #3b82f6;
+      /* Shapes */
+      --radius-sm:        6px;
+      --radius-md:        12px;
+      --radius-lg:        20px;
+      /* Typography */
+      --font-stack: 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont,
+                    'Helvetica Neue', Arial, sans-serif;
+      /* Shadows */
+      --shadow-sm: 0 1px 3px rgba(0,0,0,.10), 0 1px 2px rgba(0,0,0,.06);
+      --shadow-md: 0 4px 6px rgba(0,0,0,.07), 0 2px 4px rgba(0,0,0,.06);
+      --shadow-lg: 0 10px 25px rgba(0,0,0,.10), 0 4px 10px rgba(0,0,0,.05);
+      /* Button radius */
+      --btn-radius: 8px;
+    }
+
+    /* ============================================================
+       RESET & BASE
+       ============================================================ */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; scroll-behavior: smooth; }
+    body {
+      font-family: var(--font-stack);
+      background: var(--surface-bg);
+      color: var(--text-secondary);
+      line-height: 1.6;
+    }
+    h1,h2,h3,h4 { color: var(--text-primary); line-height: 1.3; font-weight: 700; }
+    a { color: var(--brand-primary); }
+
+    /* ============================================================
+       LAYOUT
+       ============================================================ */
+    .wg-container { max-width: 960px; margin: 0 auto; padding: 0 1rem; }
+    .wg-section   { padding: 2.5rem 0; }
+    .wg-section + .wg-section { border-top: 1px solid var(--surface-border); }
+
+    /* ============================================================
+       HERO
+       ============================================================ */
+    .wg-hero {
+      background: linear-gradient(135deg, var(--hero-from), var(--hero-to));
+      color: var(--text-on-primary);
+      padding: 3rem 0 3.5rem;
+    }
+    .wg-hero__inner {
+      display: flex; align-items: center; gap: 1.5rem; flex-wrap: wrap;
+    }
+    /* Logo placeholder — replace with <img> for your brand */
+    .wg-logo {
+      width: 64px; height: 64px;
+      background: rgba(255,255,255,.15);
+      border-radius: var(--radius-md);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 2rem; flex-shrink: 0;
+    }
+    .wg-hero__text h1 {
+      color: #fff; font-size: clamp(1.6rem, 4vw, 2.4rem); letter-spacing: -.02em;
+    }
+    .wg-hero__tagline { font-size: 1.05rem; opacity: .88; margin-top: .35rem; }
+    .wg-hero__notice {
+      margin-top: 1.25rem;
+      background: rgba(255,255,255,.12);
+      border: 1px solid rgba(255,255,255,.22);
+      border-radius: var(--radius-md);
+      padding: .7rem 1rem;
+      font-size: .875rem; opacity: .92; max-width: 640px;
+    }
+
+    /* ============================================================
+       CARDS
+       ============================================================ */
+    .wg-card {
+      background: var(--surface-card);
+      border: 1px solid var(--surface-border);
+      border-radius: var(--radius-md);
+      padding: 1.5rem;
+      box-shadow: var(--shadow-sm);
+    }
+    .wg-card__title {
+      font-size: 1rem; font-weight: 700; margin-bottom: .5rem;
+      display: flex; align-items: center; gap: .5rem; color: var(--text-primary);
+    }
+    .wg-card__icon {
+      width: 28px; height: 28px; border-radius: 6px;
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 1rem; flex-shrink: 0;
+    }
+    .wg-card__icon--blue   { background: #dbeafe; }
+    .wg-card__icon--amber  { background: #fef3c7; }
+    .wg-card__icon--green  { background: #d1fae5; }
+    .wg-card__icon--violet { background: #ede9fe; }
+    .wg-card p { font-size: .9rem; color: var(--text-secondary); }
+    .wg-grid-4 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+    }
+
+    /* ============================================================
+       EXAMPLE BOX
+       ============================================================ */
+    .wg-example-box {
+      background: #f0f9ff; border: 1px solid #bae6fd;
+      border-radius: var(--radius-md);
+      padding: 1.25rem 1.5rem; margin-top: 1.25rem; font-size: .9rem;
+    }
+    .wg-example-box strong { color: var(--brand-secondary); }
+
+    /* ============================================================
+       FORM
+       ============================================================ */
+    .wg-form-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1.25rem;
+    }
+    .wg-field { display: flex; flex-direction: column; gap: .4rem; }
+    .wg-field label {
+      font-size: .875rem; font-weight: 600; color: var(--text-primary);
+    }
+    .wg-field input, .wg-field select {
+      padding: .6rem .75rem;
+      border: 1.5px solid var(--surface-border);
+      border-radius: var(--radius-sm);
+      background: var(--surface-input);
+      font-family: var(--font-stack);
+      font-size: .95rem; color: var(--text-primary);
+      transition: border-color .15s, box-shadow .15s;
+      width: 100%;
+    }
+    .wg-field input:focus, .wg-field select:focus {
+      outline: none; border-color: var(--brand-primary);
+      box-shadow: 0 0 0 3px rgba(37,99,235,.12);
+    }
+    .wg-field__helper { font-size: .8rem; color: var(--text-muted); }
+    .wg-field__error  { font-size: .8rem; color: var(--color-error); display: none; }
+    .wg-field.has-error input,
+    .wg-field.has-error select  { border-color: var(--color-error); }
+    .wg-field.has-error .wg-field__error { display: block; }
+
+    /* ============================================================
+       DYNAMIC DESCRIPTION PANEL
+       ============================================================ */
+    .wg-desc-panel {
+      background: linear-gradient(135deg, #f0f9ff, #e0f2fe);
+      border: 1px solid #bae6fd;
+      border-radius: var(--radius-md);
+      padding: 1.1rem 1.4rem;
+      font-size: .92rem; color: #0369a1;
+      min-height: 52px; transition: all .3s;
+    }
+    .wg-desc-panel.wg-desc--warning {
+      background: linear-gradient(135deg, #fffbeb, #fef3c7);
+      border-color: #fcd34d; color: #92400e;
+    }
+    .wg-desc-panel.wg-desc--error {
+      background: linear-gradient(135deg, #fef2f2, #fee2e2);
+      border-color: #fca5a5; color: #991b1b;
+    }
+
+    /* ============================================================
+       BUTTONS
+       ============================================================ */
+    .wg-btn {
+      display: inline-flex; align-items: center; gap: .4rem;
+      padding: .6rem 1.1rem; border-radius: var(--btn-radius);
+      font-family: var(--font-stack); font-size: .9rem; font-weight: 600;
+      cursor: pointer; border: none;
+      transition: background .15s, opacity .15s, transform .1s;
+      white-space: nowrap;
+    }
+    .wg-btn:active { transform: scale(.97); }
+    .wg-btn:disabled { opacity: .45; cursor: not-allowed; transform: none; }
+    .wg-btn--primary { background: var(--brand-primary); color: var(--text-on-primary); }
+    .wg-btn--primary:hover:not(:disabled) { background: var(--brand-secondary); }
+    .wg-btn--danger  { background: var(--color-error); color: #fff; }
+    .wg-btn--danger:hover:not(:disabled)  { background: #dc2626; }
+    .wg-btn--outline {
+      background: transparent; color: var(--text-primary);
+      border: 1.5px solid var(--surface-border);
+    }
+    .wg-btn--outline:hover:not(:disabled) {
+      background: var(--surface-bg);
+      border-color: var(--brand-primary); color: var(--brand-primary);
+    }
+    .wg-controls { display: flex; flex-wrap: wrap; gap: .75rem; align-items: center; }
+
+    /* ============================================================
+       PROGRESS
+       ============================================================ */
+    .wg-progress-wrap { display: none; }
+    .wg-progress-wrap.is-visible { display: block; }
+    .wg-progress-bar-track {
+      background: var(--surface-border);
+      border-radius: 100px; height: 8px; overflow: hidden; margin: .75rem 0;
+    }
+    .wg-progress-bar-fill {
+      background: linear-gradient(90deg, var(--brand-primary), var(--brand-accent));
+      height: 100%; border-radius: 100px; width: 0%;
+      transition: width .3s ease;
+    }
+    .wg-progress-bar-fill.is-indeterminate {
+      animation: wg-shimmer 1.5s infinite; width: 40%;
+    }
+    @keyframes wg-shimmer {
+      0%   { margin-left: -40%; }
+      100% { margin-left: 100%; }
+    }
+    .wg-status-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: .75rem; margin-top: .75rem;
+    }
+    .wg-stat {
+      background: var(--surface-input);
+      border: 1px solid var(--surface-border);
+      border-radius: var(--radius-sm);
+      padding: .6rem .85rem;
+    }
+    .wg-stat__label {
+      font-size: .75rem; text-transform: uppercase; letter-spacing: .05em;
+      color: var(--text-muted); font-weight: 600;
+    }
+    .wg-stat__value { font-size: 1.05rem; font-weight: 700; color: var(--text-primary); margin-top: .1rem; }
+
+    /* ============================================================
+       RESULTS
+       ============================================================ */
+    .wg-results-wrap { display: none; }
+    .wg-results-wrap.is-visible { display: block; }
+    .wg-results-summary {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      gap: .75rem; margin-bottom: 1.5rem;
+    }
+    .wg-badge {
+      display: inline-flex; align-items: center; gap: .3rem;
+      padding: .25rem .65rem; border-radius: 100px;
+      font-size: .78rem; font-weight: 600;
+    }
+    .wg-badge--success { background: #d1fae5; color: #065f46; }
+    .wg-badge--warning { background: #fef3c7; color: #92400e; }
+    .wg-badge--info    { background: #dbeafe; color: #1e40af; }
+    .wg-badge--error   { background: #fee2e2; color: #991b1b; }
+    .wg-section-title {
+      font-size: 1.25rem; font-weight: 700; color: var(--text-primary);
+      margin-bottom: 1rem; display: flex; align-items: center; gap: .6rem;
+    }
+    .wg-results-table-wrap {
+      overflow-x: auto;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--surface-border);
+    }
+    .wg-results-table { border-collapse: collapse; width: 100%; font-size: .9rem; }
+    .wg-results-table thead th {
+      background: var(--surface-bg); color: var(--text-primary);
+      font-weight: 700; padding: .65rem 1rem; text-align: left;
+      border-bottom: 1.5px solid var(--surface-border); white-space: nowrap;
+      font-size: .8rem; text-transform: uppercase; letter-spacing: .05em;
+    }
+    .wg-results-table tbody tr { border-bottom: 1px solid var(--surface-border); }
+    .wg-results-table tbody tr:hover { background: #f8fafc; }
+    .wg-results-table tbody td { padding: .6rem 1rem; color: var(--text-secondary); vertical-align: middle; }
+    .wg-ticket-numbers { display: flex; flex-wrap: wrap; gap: .35rem; }
+    .wg-num-chip {
+      display: inline-block; min-width: 30px; text-align: center;
+      padding: .2rem .4rem; background: var(--brand-primary); color: #fff;
+      border-radius: 4px; font-size: .82rem; font-weight: 700;
+    }
+
+    /* ============================================================
+       HOW IT WORKS
+       ============================================================ */
+    .wg-steps { display: flex; flex-direction: column; gap: 1rem; }
+    .wg-step  { display: flex; gap: 1rem; align-items: flex-start; }
+    .wg-step__num {
+      flex-shrink: 0; width: 32px; height: 32px; border-radius: 50%;
+      background: var(--brand-primary); color: #fff;
+      font-weight: 700; font-size: .85rem;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .wg-step__text strong { display: block; color: var(--text-primary); font-size: .95rem; margin-bottom: .2rem; }
+    .wg-step__text p { font-size: .875rem; }
+
+    /* ============================================================
+       FAQ
+       ============================================================ */
+    .wg-faq { display: flex; flex-direction: column; gap: .75rem; }
+    .wg-faq-item { border: 1px solid var(--surface-border); border-radius: var(--radius-md); overflow: hidden; }
+    .wg-faq-question {
+      width: 100%; background: var(--surface-card); border: none;
+      padding: .9rem 1.1rem; text-align: left; cursor: pointer;
+      font-family: var(--font-stack); font-size: .93rem; font-weight: 600;
+      color: var(--text-primary); display: flex; justify-content: space-between;
+      align-items: center; gap: 1rem; transition: background .15s;
+    }
+    .wg-faq-question:hover { background: var(--surface-bg); }
+    .wg-faq-chevron { flex-shrink: 0; transition: transform .25s; color: var(--text-muted); font-size: .85rem; }
+    .wg-faq-item.is-open .wg-faq-chevron { transform: rotate(180deg); }
+    .wg-faq-answer {
+      display: none; padding: .85rem 1.1rem 1rem;
+      font-size: .9rem; color: var(--text-secondary);
+      border-top: 1px solid var(--surface-border); background: var(--surface-card);
+    }
+    .wg-faq-item.is-open .wg-faq-answer { display: block; }
+
+    /* ============================================================
+       ALERTS
+       ============================================================ */
+    .wg-alert {
+      border-radius: var(--radius-md); padding: .85rem 1.1rem;
+      font-size: .9rem; display: flex; gap: .6rem; align-items: flex-start;
+      margin-bottom: 1rem;
+    }
+    .wg-alert--error   { background: #fef2f2; border: 1px solid #fca5a5; color: #991b1b; }
+    .wg-alert--warning { background: #fffbeb; border: 1px solid #fcd34d; color: #92400e; }
+    .wg-alert--success { background: #f0fdf4; border: 1px solid #86efac; color: #14532d; }
+    .wg-alert--info    { background: #eff6ff; border: 1px solid #93c5fd; color: #1e3a8a; }
+    .wg-alert--hidden  { display: none; }
+
+    /* ============================================================
+       FOOTER
+       ============================================================ */
+    .wg-footer {
+      text-align: center; padding: 2rem 1rem;
+      font-size: .82rem; color: var(--text-muted);
+      border-top: 1px solid var(--surface-border); margin-top: 1rem;
+    }
+
+    /* ============================================================
+       UTILITY
+       ============================================================ */
+    .wg-sr-only {
+      position: absolute; width: 1px; height: 1px; padding: 0;
+      margin: -1px; overflow: hidden; clip: rect(0,0,0,0);
+      white-space: nowrap; border: 0;
+    }
+    .wg-mt-1 { margin-top: .5rem; }
+    .wg-mt-2 { margin-top: 1rem; }
+    .wg-mt-3 { margin-top: 1.5rem; }
+    .wg-mb-1 { margin-bottom: .5rem; }
+    .wg-text-sm   { font-size: .875rem; }
+    .wg-text-muted { color: var(--text-muted); }
+
+    /* ============================================================
+       RESPONSIVE
+       ============================================================ */
+    @media (max-width: 640px) {
+      .wg-hero { padding: 2rem 0 2.5rem; }
+      .wg-hero__inner { gap: 1rem; }
+      .wg-logo { width: 48px; height: 48px; font-size: 1.5rem; }
+      .wg-section { padding: 2rem 0; }
+      .wg-controls { gap: .5rem; }
+      .wg-btn { font-size: .82rem; padding: .5rem .85rem; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ================================================================
+     HERO / HEADER
+     ================================================================ -->
+<header class="wg-hero" role="banner">
+  <div class="wg-container">
+    <div class="wg-hero__inner">
+      <!--
+        BRAND LOGO
+        Replace the emoji below with your own <img> tag, e.g.:
+        <img src="/images/my-logo.png" alt="My Brand" width="64" height="64">
+      -->
+      <div class="wg-logo" aria-hidden="true">🎡</div>
+      <div class="wg-hero__text">
+        <!-- BRAND PAGE TITLE — change this text -->
+        <h1>Wheel Generator</h1>
+        <!-- BRAND TAGLINE — change this text -->
+        <p class="wg-hero__tagline">
+          Build a smart set of tickets that covers the combinations you need — all inside your browser.
+        </p>
+      </div>
+    </div>
+    <p class="wg-hero__notice" role="note">
+      🔍 This tool searches for the <strong>mathematically smallest wheel</strong> — the fewest
+      tickets that guarantee your chosen coverage. For manageable sizes it uses exact
+      branch-and-bound search to prove the result is optimal. For very large pools it uses the
+      best heuristic available and runs until you press Stop.
+    </p>
+  </div>
+</header>
+
+<main class="wg-container" role="main">
+
+  <!-- ================================================================
+       SECTION 1: PLAIN-ENGLISH EXPLANATIONS
+       ================================================================ -->
+  <section class="wg-section" id="wg-explain" aria-labelledby="wg-explain-title">
+    <h2 class="wg-section-title" id="wg-explain-title">
+      <span aria-hidden="true">📖</span> What Is a Wheel?
+    </h2>
+    <div class="wg-grid-4">
+      <div class="wg-card">
+        <div class="wg-card__title">
+          <span class="wg-card__icon wg-card__icon--blue" aria-hidden="true">🎟</span>
+          What is a wheel?
+        </div>
+        <p>A wheel is a carefully chosen list of tickets. Instead of picking numbers randomly,
+        a wheel guarantees that certain number patterns always appear together somewhere in
+        your ticket set — no matter which numbers come up.</p>
+      </div>
+      <div class="wg-card">
+        <div class="wg-card__title">
+          <span class="wg-card__icon wg-card__icon--amber" aria-hidden="true">🎱</span>
+          Pool size (v)
+        </div>
+        <p>The total count of numbers you are choosing from. For example, in a 6/49 lottery
+        the pool is 49. Set this to whatever the rules of your game say.</p>
+      </div>
+      <div class="wg-card">
+        <div class="wg-card__title">
+          <span class="wg-card__icon wg-card__icon--green" aria-hidden="true">🃏</span>
+          Numbers per ticket (k)
+        </div>
+        <p>How many numbers go on each ticket. In a 6/49 lottery that is 6. Every ticket
+        the tool creates will have exactly this many numbers.</p>
+      </div>
+      <div class="wg-card">
+        <div class="wg-card__title">
+          <span class="wg-card__icon wg-card__icon--violet" aria-hidden="true">🏆</span>
+          Guarantee level (t)
+        </div>
+        <p>The size of the pattern you want to guarantee. If t=3, the wheel promises that
+        for every group of 3 numbers in your pool, at least one of your tickets will
+        contain all 3 of them.</p>
+      </div>
+    </div>
+    <div class="wg-example-box" role="note">
+      <strong>Quick example:</strong> With <em>v=10, k=3, t=2</em> you are saying:
+      "I want 3-number tickets from a pool of 10, and I need every possible pair of numbers
+      to appear on at least one ticket." There are C(10,2) = 45 pairs. The tool might cover
+      all of them with as few as 5 tickets — far fewer than the 120 possible tickets!
+    </div>
+  </section>
+
+  <!-- ================================================================
+       SECTION 2: PARAMETER FORM
+       ================================================================ -->
+  <section class="wg-section" id="wg-params" aria-labelledby="wg-params-title">
+    <h2 class="wg-section-title" id="wg-params-title">
+      <span aria-hidden="true">⚙️</span> Choose Your Parameters
+    </h2>
+
+    <!-- Presets -->
+    <div class="wg-field wg-mt-1" style="max-width:320px">
+      <label for="wg-preset">Load a preset example</label>
+      <select id="wg-preset">
+        <option value="">— Choose a preset —</option>
+        <option value="10,3,2">Pool 10 · Ticket 3 · Guarantee 2</option>
+        <option value="15,4,2">Pool 15 · Ticket 4 · Guarantee 2</option>
+        <option value="25,5,3">Pool 25 · Ticket 5 · Guarantee 3</option>
+        <option value="49,6,3">Classic 6/49 · Guarantee 3</option>
+      </select>
+      <span class="wg-field__helper">Fill the form below with a ready-made example.</span>
+    </div>
+
+    <div class="wg-form-grid wg-mt-2">
+      <!-- Pool size v -->
+      <div class="wg-field" id="wg-field-v">
+        <label for="wg-v">
+          Pool size <abbr title="Total numbers to pick from">(v)</abbr>
+        </label>
+        <input type="number" id="wg-v" name="v" min="2" max="200"
+               value="10" inputmode="numeric" autocomplete="off"
+               aria-describedby="wg-v-help wg-v-err">
+        <span class="wg-field__helper" id="wg-v-help">Total numbers in the pool. E.g. 49 for a 6/49 game.</span>
+        <span class="wg-field__error"  id="wg-v-err"  role="alert"></span>
+      </div>
+
+      <!-- Numbers per ticket k -->
+      <div class="wg-field" id="wg-field-k">
+        <label for="wg-k">
+          Numbers per ticket <abbr title="How many numbers on each ticket">(k)</abbr>
+        </label>
+        <input type="number" id="wg-k" name="k" min="2" max="50"
+               value="3" inputmode="numeric" autocomplete="off"
+               aria-describedby="wg-k-help wg-k-err">
+        <span class="wg-field__helper" id="wg-k-help">Numbers on each ticket. Must be ≤ pool size.</span>
+        <span class="wg-field__error"  id="wg-k-err"  role="alert"></span>
+      </div>
+
+      <!-- Guarantee level t -->
+      <div class="wg-field" id="wg-field-t">
+        <label for="wg-t">
+          Guarantee level <abbr title="Pattern size to guarantee">(t)</abbr>
+        </label>
+        <input type="number" id="wg-t" name="t" min="1" max="20"
+               value="2" inputmode="numeric" autocomplete="off"
+               aria-describedby="wg-t-help wg-t-err">
+        <span class="wg-field__helper" id="wg-t-help">Every group of t numbers will appear on at least one ticket.</span>
+        <span class="wg-field__error"  id="wg-t-err"  role="alert"></span>
+      </div>
+
+      <!-- Max tickets (optional) -->
+      <div class="wg-field" id="wg-field-maxtickets">
+        <label for="wg-maxtickets">Max tickets <span class="wg-text-muted">(optional)</span></label>
+        <input type="number" id="wg-maxtickets" name="maxtickets"
+               min="1" max="100000" placeholder="No limit"
+               inputmode="numeric" autocomplete="off"
+               aria-describedby="wg-maxtickets-help">
+        <span class="wg-field__helper" id="wg-maxtickets-help">
+          Stop after this many tickets. Coverage may be incomplete.
+        </span>
+      </div>
+
+      <!-- Restarts -->
+      <div class="wg-field" id="wg-field-restarts">
+        <label for="wg-restarts">Randomized restarts</label>
+        <select id="wg-restarts" aria-describedby="wg-restarts-help">
+          <option value="5">5 — quick</option>
+          <option value="20" selected>20 — balanced</option>
+          <option value="50">50 — thorough</option>
+          <option value="100">100 — maximum effort</option>
+        </select>
+        <span class="wg-field__helper" id="wg-restarts-help">
+          More restarts = more attempts to find the smallest wheel. No time limit — runs until done.
+        </span>
+      </div>
+    </div>
+
+    <!-- Dynamic description -->
+    <div class="wg-desc-panel wg-mt-2" id="wg-desc"
+         aria-live="polite" aria-label="Parameter description">
+      Enter your parameters above to see a plain-English summary here.
+    </div>
+
+    <!-- Validation error alert -->
+    <div class="wg-alert wg-alert--error wg-alert--hidden wg-mt-2"
+         id="wg-form-error" role="alert">
+      <span aria-hidden="true">❌</span>
+      <span id="wg-form-error-text"></span>
+    </div>
+  </section>
+
+  <!-- ================================================================
+       SECTION 3: CONTROLS
+       ================================================================ -->
+  <section class="wg-section" id="wg-controls-section"
+           aria-labelledby="wg-controls-title">
+    <h2 class="wg-section-title" id="wg-controls-title">
+      <span aria-hidden="true">▶️</span> Generate Your Wheel
+    </h2>
+    <div class="wg-controls" role="group" aria-label="Wheel generator controls">
+      <button class="wg-btn wg-btn--primary" id="wg-btn-generate" type="button">
+        <span aria-hidden="true">✨</span> Generate Wheel
+      </button>
+      <button class="wg-btn wg-btn--danger"  id="wg-btn-stop"         type="button" disabled>
+        <span aria-hidden="true">⏹</span> Stop
+      </button>
+      <button class="wg-btn wg-btn--outline" id="wg-btn-clear"        type="button" disabled>
+        <span aria-hidden="true">🗑</span> Clear
+      </button>
+      <button class="wg-btn wg-btn--outline" id="wg-btn-export-txt"   type="button" disabled>
+        <span aria-hidden="true">📄</span> Export TXT
+      </button>
+      <button class="wg-btn wg-btn--outline" id="wg-btn-export-json"  type="button" disabled>
+        <span aria-hidden="true">📦</span> Export JSON
+      </button>
+      <button class="wg-btn wg-btn--outline" id="wg-btn-copy"         type="button" disabled>
+        <span aria-hidden="true">📋</span> Copy Results
+      </button>
+    </div>
+    <p class="wg-text-sm wg-text-muted wg-mt-1">
+      The browser stays responsive during generation — you can scroll and read this page freely.
+    </p>
+  </section>
+
+  <!-- ================================================================
+       SECTION 4: PROGRESS
+       ================================================================ -->
+  <section class="wg-section wg-progress-wrap" id="wg-progress-section"
+           aria-labelledby="wg-progress-title" aria-live="polite">
+    <h2 class="wg-section-title" id="wg-progress-title">
+      <span aria-hidden="true">⏳</span> Generation Progress
+    </h2>
+    <div id="wg-phase-text" class="wg-text-sm"
+         style="color:var(--brand-primary);font-weight:600;min-height:1.4em;"></div>
+    <div class="wg-progress-bar-track"
+         role="progressbar" aria-label="Generation progress"
+         aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"
+         id="wg-progress-bar-role">
+      <div class="wg-progress-bar-fill" id="wg-progress-fill"></div>
+    </div>
+    <div class="wg-status-grid">
+      <div class="wg-stat">
+        <div class="wg-stat__label">Time elapsed</div>
+        <div class="wg-stat__value" id="wg-stat-time">0s</div>
+      </div>
+      <div class="wg-stat">
+        <div class="wg-stat__label">Tickets found</div>
+        <div class="wg-stat__value" id="wg-stat-tickets">0</div>
+      </div>
+      <div class="wg-stat">
+        <div class="wg-stat__label">Patterns left</div>
+        <div class="wg-stat__value" id="wg-stat-uncovered">—</div>
+      </div>
+      <div class="wg-stat">
+        <div class="wg-stat__label">Mode</div>
+        <div class="wg-stat__value" id="wg-stat-mode">—</div>
+      </div>
+      <div class="wg-stat">
+        <div class="wg-stat__label">Lower bound</div>
+        <div class="wg-stat__value" id="wg-stat-lb">—</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================================================================
+       SECTION 5: RESULTS
+       ================================================================ -->
+  <section class="wg-section wg-results-wrap" id="wg-results-section"
+           aria-labelledby="wg-results-title">
+    <h2 class="wg-section-title" id="wg-results-title">
+      <span aria-hidden="true">🏁</span> Your Wheel
+    </h2>
+    <div class="wg-results-summary" id="wg-results-summary"></div>
+    <div id="wg-verification-badge" class="wg-mt-1 wg-mb-1"></div>
+    <p id="wg-results-message" class="wg-text-sm wg-text-muted wg-mt-1"
+       style="margin-bottom:1rem;"></p>
+    <div class="wg-alert wg-alert--hidden" id="wg-result-alert">
+      <span id="wg-result-alert-icon" aria-hidden="true"></span>
+      <span id="wg-result-alert-text"></span>
+    </div>
+    <div class="wg-results-table-wrap">
+      <table class="wg-results-table" id="wg-results-table"
+             aria-label="Generated tickets">
+        <thead>
+          <tr>
+            <th scope="col">#</th>
+            <th scope="col">Ticket Numbers</th>
+          </tr>
+        </thead>
+        <tbody id="wg-results-tbody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ================================================================
+       SECTION 6: HOW IT WORKS
+       ================================================================ -->
+  <section class="wg-section" id="wg-howit" aria-labelledby="wg-howit-title">
+    <h2 class="wg-section-title" id="wg-howit-title">
+      <span aria-hidden="true">🔬</span> How It Works (Plain English)
+    </h2>
+    <div class="wg-steps" role="list">
+      <div class="wg-step" role="listitem">
+        <div class="wg-step__num" aria-hidden="true">1</div>
+        <div class="wg-step__text">
+          <strong>List all the patterns</strong>
+          <p>The tool first figures out every possible t-number pattern in your pool.
+          For pool=10, t=2 that is 45 pairs. For pool=49, t=3 that is 18,424 triples.</p>
+        </div>
+      </div>
+      <div class="wg-step" role="listitem">
+        <div class="wg-step__num" aria-hidden="true">2</div>
+        <div class="wg-step__text">
+          <strong>Pick the most useful ticket first</strong>
+          <p>It scores every candidate ticket by how many <em>uncovered</em> patterns it
+          contains, then picks the winner. This "most helpful first" approach is called
+          greedy selection.</p>
+        </div>
+      </div>
+      <div class="wg-step" role="listitem">
+        <div class="wg-step__num" aria-hidden="true">3</div>
+        <div class="wg-step__text">
+          <strong>Repeat until everything is covered</strong>
+          <p>Each picked ticket crosses its patterns off the list. The process repeats,
+          always choosing the ticket that adds the most new coverage.</p>
+        </div>
+      </div>
+      <div class="wg-step" role="listitem">
+        <div class="wg-step__num" aria-hidden="true">4</div>
+        <div class="wg-step__text">
+          <strong>Try again from scratch (restarts)</strong>
+          <p>To find a smaller wheel, the tool reruns the whole process with a different
+          random shuffle each time and keeps the best (smallest) result.</p>
+        </div>
+      </div>
+      <div class="wg-step" role="listitem">
+        <div class="wg-step__num" aria-hidden="true">5</div>
+        <div class="wg-step__text">
+          <strong>Remove unnecessary tickets</strong>
+          <p>At the end it checks whether any ticket is now redundant — its patterns are
+          all covered by other tickets. Redundant tickets are removed to shrink the wheel.</p>
+        </div>
+      </div>
+      <div class="wg-step" role="listitem">
+        <div class="wg-step__num" aria-hidden="true">6</div>
+        <div class="wg-step__text">
+          <strong>Large jobs use smart sampling</strong>
+          <p>When there are millions of possible tickets (like 6/49), testing every one
+          each round would freeze the browser. Instead the tool randomly samples a group
+          of promising candidates per round. The result is still a very good wheel — just
+          not guaranteed to be the absolute smallest possible.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================================================================
+       SECTION 7: FAQ
+       ================================================================ -->
+  <section class="wg-section" id="wg-faq" aria-labelledby="wg-faq-title">
+    <h2 class="wg-section-title" id="wg-faq-title">
+      <span aria-hidden="true">❓</span> Frequently Asked Questions
+    </h2>
+    <!-- FAQ items are built by JavaScript below -->
+    <div class="wg-faq" id="wg-faq-list" role="list"></div>
+  </section>
+
+</main>
+
+<footer class="wg-footer" role="contentinfo">
+  <!-- BRAND FOOTER — customize this text -->
+  <p>Wheel Generator &mdash; Client-side lottery covering design tool.</p>
+  <p class="wg-mt-1">All calculations run entirely in your browser. No data is ever sent to any server.</p>
+</footer>
+
+<script>
+/* ================================================================
+   WHEEL GENERATOR — Main Script (v2)
+   ================================================================
+   Changes from v1:
+     - No time limit: runs until the smallest wheel is found (or
+       the user presses Stop).
+     - Branch-and-bound exact minimum search added after greedy.
+     - Multi-pass redundancy pruning until convergence.
+     - Lower bound computed and shown in the UI.
+     - "Proven Optimal" badge when result = lower bound.
+     - Doubled thresholds for exact-mode eligibility.
+   ================================================================
+   Security:
+     - No eval(), no new Function().
+     - No inline event handlers (all addEventListener).
+     - User text inserted via textContent only.
+     - No external dependencies.
+   ================================================================ */
+(function () {
+  'use strict';
+
+  /* ============================================================
+     A: CONSTANTS
+     ============================================================ */
+
+  /** Max t-subsets to track exactly (raised: no time limit concern). */
+  var MAX_EXACT_TSUBSETS = 500000;
+
+  /** Max k-subsets to enumerate as candidates. */
+  var MAX_EXACT_KSUBSETS = 2000000;
+
+  /** Candidates sampled per round in heuristic / mixed mode. */
+  var HEURISTIC_SAMPLE_SIZE = 10000;
+
+  /** Safety cap to prevent infinite block accumulation. */
+  var MAX_BLOCKS_SAFETY = 1000000;
+
+  /**
+   * Branch-and-bound is attempted when C(v,k) ≤ this value.
+   * There is NO node-count cap — B&B runs until it finds the
+   * optimal solution, exhausts the search space, or the user
+   * clicks Stop.
+   */
+  var BB_MAX_KSUBSETS = 10000;
+
+  /* ============================================================
+     B: UTILITY FUNCTIONS
+     ============================================================ */
+
+  /**
+   * Binomial coefficient C(n, k).
+   * Returns Infinity when the result overflows.
+   * @param {number} n
+   * @param {number} k
+   * @returns {number}
+   */
+  function binomial(n, k) {
+    if (k < 0 || k > n) return 0;
+    if (k === 0 || k === n) return 1;
+    if (k > n - k) k = n - k;
+    var result = 1;
+    for (var i = 0; i < k; i++) {
+      result = result * (n - i) / (i + 1);
+      if (!isFinite(result)) return Infinity;
+    }
+    return Math.round(result);
+  }
+
+  /**
+   * Schönheim lower bound L(v, k, t).
+   * A tighter lower bound on the covering number than ceil(C(v,t)/C(k,t)).
+   * L(v,k,1) = ceil(v/k)
+   * L(v,k,t) = ceil((v/k) * L(v-1, k-1, t-1))
+   * @param {number} v
+   * @param {number} k
+   * @param {number} t
+   * @returns {number}
+   */
+  /* Memoization cache for schonheimLB to avoid redundant recursion. */
+  var _schonheimCache = {};
+
+  function schonheimLB(v, k, t) {
+    if (t === 0) return 1;
+    if (k < t || v < t || k <= 0) return 1;
+    if (t === 1) return Math.ceil(v / k);
+    var key = v + ',' + k + ',' + t;
+    if (_schonheimCache[key] !== undefined) return _schonheimCache[key];
+    var result = Math.ceil((v / k) * schonheimLB(v - 1, k - 1, t - 1));
+    _schonheimCache[key] = result;
+    return result;
+  }
+
+  /**
+   * Manual iterator over all k-combinations of {1..n}.
+   * @param {number} n
+   * @param {number} k
+   * @returns {{ next: function(): { value: number[], done: boolean } }}
+   */
+  function combinationsRange(n, k) {
+    if (k <= 0 || k > n) return { next: function () { return { done: true }; } };
+    var idx = [];
+    for (var i = 0; i < k; i++) idx.push(i + 1);
+    var started = false;
+    return {
+      next: function () {
+        if (!started) {
+          started = true;
+          return { value: idx.slice(), done: false };
+        }
+        var j = k - 1;
+        while (j >= 0 && idx[j] === n - k + j + 1) j--;
+        if (j < 0) return { done: true };
+        idx[j]++;
+        for (var m = j + 1; m < k; m++) idx[m] = idx[m - 1] + 1;
+        return { value: idx.slice(), done: false };
+      }
+    };
+  }
+
+  /**
+   * Collect all k-combinations of {1..n} into an array.
+   * @param {number} n
+   * @param {number} k
+   * @returns {number[][]}
+   */
+  function allCombinations(n, k) {
+    var result = [];
+    var it = combinationsRange(n, k);
+    var r;
+    while (!(r = it.next()).done) result.push(r.value);
+    return result;
+  }
+
+  /**
+   * Get all t-subsets of a block (sorted array).
+   * @param {number[]} block
+   * @param {number} t
+   * @returns {number[][]}
+   */
+  function getTSubsets(block, t) {
+    var result = [];
+    var bLen = block.length;
+    if (t <= 0 || t > bLen) return result;
+    var idx = [];
+    for (var i = 0; i < t; i++) idx.push(i);
+    while (true) {
+      result.push(idx.map(function (x) { return block[x]; }));
+      var j = t - 1;
+      while (j >= 0 && idx[j] === bLen - t + j) j--;
+      if (j < 0) break;
+      idx[j]++;
+      for (var m = j + 1; m < t; m++) idx[m] = idx[m - 1] + 1;
+    }
+    return result;
+  }
+
+  /**
+   * Score a block by how many of its t-subsets are in uncoveredSet.
+   * @param {number[]} block
+   * @param {number} t
+   * @param {Set<string>} uncoveredSet
+   * @returns {number}
+   */
+  function scoreBlock(block, t, uncoveredSet) {
+    var subs = getTSubsets(block, t);
+    var count = 0;
+    for (var i = 0; i < subs.length; i++) {
+      if (uncoveredSet.has(subs[i].join(','))) count++;
+    }
+    return count;
+  }
+
+  /**
+   * Generate a random k-subset of {1..v} (Fisher-Yates partial shuffle).
+   * @param {number} v
+   * @param {number} k
+   * @returns {number[]} sorted
+   */
+  function randomKSubset(v, k) {
+    var pool = [];
+    for (var i = 1; i <= v; i++) pool.push(i);
+    for (var a = 0; a < k; a++) {
+      var b = a + Math.floor(Math.random() * (v - a));
+      var tmp = pool[a]; pool[a] = pool[b]; pool[b] = tmp;
+    }
+    return pool.slice(0, k).sort(function (x, y) { return x - y; });
+  }
+
+  /**
+   * Generate a random k-subset of {1..v} guaranteed to contain mustInclude.
+   * @param {number} v
+   * @param {number} k
+   * @param {number[]} mustInclude - sorted
+   * @returns {number[]} sorted
+   */
+  function randomKSubsetContaining(v, k, mustInclude) {
+    var needed = k - mustInclude.length;
+    if (needed < 0) return mustInclude.slice(0, k).sort(function (x, y) { return x - y; });
+    var mustSet = {};
+    for (var i = 0; i < mustInclude.length; i++) mustSet[mustInclude[i]] = true;
+    var available = [];
+    for (var n = 1; n <= v; n++) {
+      if (!mustSet[n]) available.push(n);
+    }
+    for (var a = 0; a < needed && a < available.length; a++) {
+      var b = a + Math.floor(Math.random() * (available.length - a));
+      var tmp = available[a]; available[a] = available[b]; available[b] = tmp;
+    }
+    return mustInclude.concat(available.slice(0, needed)).sort(function (x, y) { return x - y; });
+  }
+
+  /**
+   * Shuffle an array in place (Fisher-Yates).
+   * @param {Array} arr
+   */
+  function shuffleInPlace(arr) {
+    for (var i = arr.length - 1; i > 0; i--) {
+      var j = Math.floor(Math.random() * (i + 1));
+      var tmp = arr[i]; arr[i] = arr[j]; arr[j] = tmp;
+    }
+  }
+
+  /**
+   * Yield control back to the browser event loop.
+   * @param {number} [ms=0]
+   * @returns {Promise<void>}
+   */
+  function yieldControl(ms) {
+    return new Promise(function (resolve) {
+      setTimeout(resolve, ms === undefined ? 0 : ms);
+    });
+  }
+
+  /**
+   * Format a number with thousands separators.
+   * @param {number} n
+   * @returns {string}
+   */
+  function fmt(n) {
+    if (!isFinite(n)) return '\u221E'; /* ∞ */
+    return n.toLocaleString();
+  }
+
+  /**
+   * Format elapsed milliseconds.
+   * @param {number} ms
+   * @returns {string}
+   */
+  function fmtTime(ms) {
+    if (ms < 1000) return ms + 'ms';
+    if (ms < 60000) return (ms / 1000).toFixed(1) + 's';
+    var m = Math.floor(ms / 60000);
+    var s = Math.round((ms % 60000) / 1000);
+    return m + 'm ' + s + 's';
+  }
+
+  /* ============================================================
+     C: VALIDATION
+     ============================================================ */
+
+  /**
+   * Validate wheel parameters.
+   * @param {number} v
+   * @param {number} k
+   * @param {number} t
+   * @param {number|null} maxTickets
+   * @returns {{ field: string, message: string }[]}
+   */
+  function validateParams(v, k, t, maxTickets) {
+    var errors = [];
+    if (!Number.isInteger(v) || v < 2 || v > 10000) {
+      errors.push({ field: 'v', message: 'Pool size must be a whole number between 2 and 10,000.' });
+    }
+    if (!Number.isInteger(k) || k < 2 || k > 500) {
+      errors.push({ field: 'k', message: 'Numbers per ticket must be a whole number between 2 and 500.' });
+    }
+    if (!Number.isInteger(t) || t < 1 || t > 100) {
+      errors.push({ field: 't', message: 'Guarantee level must be a whole number between 1 and 100.' });
+    }
+    if (Number.isInteger(k) && Number.isInteger(v) && k > v) {
+      errors.push({ field: 'k', message: 'Numbers per ticket (k) cannot be larger than the pool size (v).' });
+    }
+    if (Number.isInteger(t) && Number.isInteger(k) && t > k) {
+      errors.push({ field: 't', message: 'Guarantee level (t) cannot be larger than numbers per ticket (k).' });
+    }
+    if (maxTickets !== null && (!Number.isInteger(maxTickets) || maxTickets < 1)) {
+      errors.push({ field: 'general', message: 'Max tickets must be a positive whole number if provided.' });
+    }
+    return errors;
+  }
+
+  /* ============================================================
+     D: WHEEL ENGINE
+     ============================================================ */
+
+  /**
+   * WheelEngine — generates the smallest possible covering wheel.
+   *
+   * Strategy:
+   *   1. Run greedy set-cover (with randomized restarts) to get an
+   *      upper bound on the solution size.
+   *   2. Prune redundant tickets (multi-pass until convergence).
+   *   3. For exact mode: run branch-and-bound to attempt improving
+   *      below the greedy result, down to the theoretical lower bound.
+   *   4. Verify the final result.
+   *
+   * There is NO time limit — the engine runs until a solution is
+   * found or the user clicks Stop.
+   *
+   * @param {object} params  - { v, k, t, restarts, maxTickets }
+   * @param {object} callbacks - { onPhase, onRound, onDone, onStopped }
+   */
+  function WheelEngine(params, callbacks) {
+    this.v          = params.v;
+    this.k          = params.k;
+    this.t          = params.t;
+    this.restarts   = Math.max(1, params.restarts || 20);
+    this.maxTickets = params.maxTickets || null;
+    this.callbacks  = callbacks;
+    this._stopped   = false;
+    this._startTime = 0;
+
+    var nT = binomial(this.v, this.t);
+    var nK = binomial(this.v, this.k);
+
+    /* Choose operating mode based on problem size. */
+    if (nT <= MAX_EXACT_TSUBSETS && nK <= MAX_EXACT_KSUBSETS) {
+      this.mode = 'exact';
+    } else if (nT <= MAX_EXACT_TSUBSETS) {
+      this.mode = 'mixed';   /* track t-subsets exactly, sample k-blocks */
+    } else {
+      this.mode = 'heuristic'; /* full heuristic */
+    }
+    this.totalTSubsets = nT;
+    this.totalKSubsets = nK;
+
+    /**
+     * Theoretical lower bound on the number of tickets needed.
+     * We use the Schönheim bound L(v,k,t) which is tighter than
+     * the simple ceil(C(v,t)/C(k,t)) bound.
+     */
+    this.lowerBound = schonheimLB(this.v, this.k, this.t);
+  }
+
+  /** Signal the engine to stop after the current step. */
+  WheelEngine.prototype.stop = function () {
+    this._stopped = true;
+  };
+
+  /** Milliseconds elapsed since run() was called. */
+  WheelEngine.prototype._elapsed = function () {
+    return Date.now() - this._startTime;
+  };
+
+  /**
+   * Main entry point.
+   * Resolves when generation is complete or stopped.
+   */
+  WheelEngine.prototype.run = function () {
+    var self = this;
+    self._stopped   = false;
+    self._startTime = Date.now();
+    self.callbacks.onPhase('Starting\u2026', 0);
+
+    var bestBlocks = null;
+    var bestCount  = Infinity;
+    var bbData     = null; /* precomputed data for branch-and-bound */
+
+    var modeLabel = self.mode === 'exact' ? 'Exact'
+      : self.mode === 'mixed' ? 'Mixed (sampled)'
+      : 'Heuristic';
+
+    /* --- Phase 1: Greedy restarts --- */
+    function runRestart(restart) {
+      if (restart > self.restarts || self._stopped) {
+        return Promise.resolve();
+      }
+      self.callbacks.onPhase(
+        'Greedy pass ' + restart + '\u202f/\u202f' + self.restarts +
+        ' \u2014 ' + modeLabel, 0
+      );
+      var p;
+      if (self.mode === 'exact') {
+        p = self._runExact().then(function (result) {
+          /* _runExact returns { blocks, bbData } */
+          if (result && result.blocks !== null && result.blocks.length < bestCount) {
+            bestCount  = result.blocks.length;
+            bestBlocks = result.blocks;
+            if (!bbData) bbData = result.bbData; /* keep first set of precomputed data */
+          }
+        });
+      } else {
+        p = self._runSampling().then(function (blocks) {
+          if (blocks !== null && blocks.length < bestCount) {
+            bestCount  = blocks.length;
+            bestBlocks = blocks;
+          }
+        });
+      }
+      return p.then(function () { return runRestart(restart + 1); });
+    }
+
+    return runRestart(1).then(function () {
+      if (self._stopped && bestBlocks === null) {
+        self.callbacks.onStopped(null, self._elapsed());
+        return;
+      }
+
+      /* --- Phase 2: Multi-pass pruning --- */
+      var prunePromise = (bestBlocks && bestBlocks.length > 0)
+        ? (self.callbacks.onPhase('Pruning redundant tickets\u2026', 90),
+           yieldControl().then(function () { return self._pruneBlocks(bestBlocks); }))
+        : Promise.resolve(bestBlocks || []);
+
+      return prunePromise.then(function (pruned) {
+        bestBlocks = pruned;
+
+        /* --- Phase 3: Branch-and-bound minimization (exact mode only) --- */
+        var bbPromise;
+        if (
+          !self._stopped &&
+          self.mode === 'exact' &&
+          bbData &&
+          bestBlocks.length > self.lowerBound &&
+          bbData.numK <= BB_MAX_KSUBSETS
+        ) {
+          self.callbacks.onPhase(
+            'Searching for smaller wheel (branch-and-bound, target \u2264 ' +
+            (bestBlocks.length - 1) + ')\u2026', 93
+          );
+          bbPromise = yieldControl().then(function () {
+            return self._minimizeWithBB(bestBlocks, bbData);
+          });
+        } else {
+          bbPromise = Promise.resolve(bestBlocks);
+        }
+
+        return bbPromise.then(function (minimal) {
+          bestBlocks = minimal;
+
+          /* --- Phase 4: Final prune after B&B --- */
+          return self._pruneBlocks(bestBlocks);
+        }).then(function (finalBlocks) {
+          bestBlocks = finalBlocks;
+
+          /* --- Phase 5: Verify --- */
+          self.callbacks.onPhase('Verifying coverage\u2026', 98);
+          var verification = self._verify(bestBlocks);
+
+          self.callbacks.onPhase('Done!', 100);
+          self.callbacks.onDone(bestBlocks, verification, self._elapsed(), self.mode);
+        });
+      });
+    }).catch(function (err) {
+      self.callbacks.onPhase('Error: ' + String(err), 0);
+      self.callbacks.onStopped(bestBlocks, self._elapsed());
+    });
+  };
+
+  /* -----------------------------------------------------------
+     EXACT MODE
+     Enumerate ALL k-subsets and t-subsets; build an inverted
+     index for O(1) score updates; run greedy greedily.
+     Returns { blocks, bbData } where bbData is the precomputed
+     data structures needed by branch-and-bound.
+     ----------------------------------------------------------- */
+  WheelEngine.prototype._runExact = function () {
+    var self = this;
+    var v = self.v, k = self.k, t = self.t;
+
+    self.callbacks.onPhase('Building candidate tickets\u2026', 5);
+    return yieldControl().then(function () {
+      var allBlocks = allCombinations(v, k);
+      shuffleInPlace(allBlocks); /* randomize for restart variety */
+
+      /* Map each t-subset key → sequential index. */
+      self.callbacks.onPhase('Computing patterns to cover\u2026', 15);
+      var tSubKeyToIdx = {};
+      var tCount = 0;
+      var it = combinationsRange(v, t);
+      var r;
+      while (!(r = it.next()).done) {
+        tSubKeyToIdx[r.value.join(',')] = tCount++;
+      }
+      var numT = tCount;
+      var numK = allBlocks.length;
+
+      /* For each k-block, list its t-subset indices. */
+      self.callbacks.onPhase('Building coverage index\u2026', 28);
+      var blockTSubs = new Array(numK);
+      for (var i = 0; i < numK; i++) {
+        var subs = getTSubsets(allBlocks[i], t);
+        var indices = new Array(subs.length);
+        for (var s = 0; s < subs.length; s++) {
+          indices[s] = tSubKeyToIdx[subs[s].join(',')];
+        }
+        blockTSubs[i] = indices;
+      }
+
+      /* Inverted index: for each t-subset, which k-blocks cover it. */
+      self.callbacks.onPhase('Preparing inverted index\u2026', 40);
+      var tSubBlocks = new Array(numT);
+      for (var ti = 0; ti < numT; ti++) tSubBlocks[ti] = [];
+      for (var bi = 0; bi < numK; bi++) {
+        var tsubs = blockTSubs[bi];
+        for (var si = 0; si < tsubs.length; si++) {
+          tSubBlocks[tsubs[si]].push(bi);
+        }
+      }
+
+      /* Greedy selection with incremental score updates. */
+      self.callbacks.onPhase('Running greedy selection\u2026', 50);
+      var scores      = new Int32Array(numK);
+      for (var ci = 0; ci < numK; ci++) scores[ci] = blockTSubs[ci].length;
+      var covered     = new Uint8Array(numT);
+      var numUncovered = numT;
+      var selected    = [];
+
+      function greedyStep() {
+        if (numUncovered === 0) return Promise.resolve({ blocks: selected, bbData: { allBlocks: allBlocks, blockTSubs: blockTSubs, tSubBlocks: tSubBlocks, numT: numT, numK: numK } });
+        if (self._stopped) return Promise.resolve({ blocks: selected, bbData: null });
+        if (self.maxTickets !== null && selected.length >= self.maxTickets) return Promise.resolve({ blocks: selected, bbData: null });
+        if (selected.length >= MAX_BLOCKS_SAFETY) return Promise.resolve({ blocks: selected, bbData: null });
+
+        /* Linear scan for highest-scoring block. */
+        var bestIdx   = -1;
+        var bestScore = 0;
+        for (var li = 0; li < numK; li++) {
+          if (scores[li] > bestScore) { bestScore = scores[li]; bestIdx = li; }
+        }
+        if (bestIdx === -1 || bestScore <= 0) return Promise.resolve({ blocks: selected, bbData: null });
+
+        selected.push(allBlocks[bestIdx]);
+
+        /* Propagate score decrements through inverted index. */
+        var pickedSubs = blockTSubs[bestIdx];
+        for (var pi = 0; pi < pickedSubs.length; pi++) {
+          var tidx = pickedSubs[pi];
+          if (!covered[tidx]) {
+            covered[tidx] = 1;
+            numUncovered--;
+            var affectedBlocks = tSubBlocks[tidx];
+            for (var ai = 0; ai < affectedBlocks.length; ai++) {
+              if (scores[affectedBlocks[ai]] > 0) scores[affectedBlocks[ai]]--;
+            }
+          }
+        }
+        scores[bestIdx] = 0; /* mark used */
+
+        var progress = 50 + Math.round(35 * (numT - numUncovered) / numT);
+        self.callbacks.onRound(selected.length, numUncovered, progress);
+
+        return yieldControl().then(greedyStep);
+      }
+
+      return greedyStep().then(function (result) {
+        /* Always attach full bbData when greedy succeeds. */
+        if (!result.bbData) {
+          result.bbData = {
+            allBlocks: allBlocks,
+            blockTSubs: blockTSubs,
+            tSubBlocks: tSubBlocks,
+            numT: numT,
+            numK: numK
+          };
+        }
+        return result;
+      });
+    });
+  };
+
+  /* -----------------------------------------------------------
+     SAMPLING MODE
+     Used when C(v,k) > MAX_EXACT_KSUBSETS.
+     T-subsets are tracked exactly when feasible; otherwise a
+     large random sample is used as a proxy.
+     ----------------------------------------------------------- */
+  WheelEngine.prototype._runSampling = function () {
+    var self = this;
+    var v = self.v, k = self.k, t = self.t;
+    var exactT = (self.totalTSubsets <= MAX_EXACT_TSUBSETS);
+
+    self.callbacks.onPhase(
+      exactT ? 'Computing patterns to cover\u2026' : 'Sampling patterns (very large mode)\u2026',
+      10
+    );
+
+    return yieldControl().then(function () {
+      var uncoveredSet = new Set();
+
+      if (exactT) {
+        var it = combinationsRange(v, t);
+        var r;
+        while (!(r = it.next()).done) uncoveredSet.add(r.value.join(','));
+      } else {
+        /* Sample a large proxy set when C(v,t) is huge. */
+        var targetSample = Math.min(
+          100000, Math.max(20000, Math.floor(binomial(v, t) * 0.05))
+        );
+        for (var si = 0; si < targetSample; si++) {
+          uncoveredSet.add(randomKSubset(v, t).join(','));
+        }
+      }
+
+      var numT       = uncoveredSet.size;
+      var selected   = [];
+      var stuckCount = 0;
+      var MAX_STUCK  = 300;
+
+      self.callbacks.onPhase('Running greedy selection (sampling)\u2026', 20);
+
+      function samplingStep() {
+        if (uncoveredSet.size === 0) return Promise.resolve(selected);
+        if (self._stopped) return Promise.resolve(selected);
+        if (self.maxTickets !== null && selected.length >= self.maxTickets) return Promise.resolve(selected);
+        if (selected.length >= MAX_BLOCKS_SAFETY) return Promise.resolve(selected);
+
+        var uncoveredKeys = Array.from(uncoveredSet);
+        var bestBlock = null;
+        var bestScore = 0;
+        var numSamples = Math.min(HEURISTIC_SAMPLE_SIZE, 1000 + selected.length * 5);
+
+        for (var si = 0; si < numSamples; si++) {
+          var cand;
+          /* 70% guided: extend a random uncovered pattern to a full k-block. */
+          if (si < numSamples * 0.70 && uncoveredKeys.length > 0) {
+            var targetKey  = uncoveredKeys[Math.floor(Math.random() * uncoveredKeys.length)];
+            var targetNums = targetKey.split(',').map(Number);
+            cand = (targetNums.length <= k)
+              ? randomKSubsetContaining(v, k, targetNums)
+              : randomKSubset(v, k);
+          } else {
+            cand = randomKSubset(v, k);
+          }
+          var score = scoreBlock(cand, t, uncoveredSet);
+          if (score > bestScore) { bestScore = score; bestBlock = cand; }
+        }
+
+        if (bestBlock && bestScore > 0) {
+          selected.push(bestBlock);
+          var subs = getTSubsets(bestBlock, t);
+          for (var i = 0; i < subs.length; i++) uncoveredSet.delete(subs[i].join(','));
+          stuckCount = 0;
+          var progress = 20 + Math.round(75 * (numT - uncoveredSet.size) / Math.max(numT, 1));
+          self.callbacks.onRound(selected.length, uncoveredSet.size, progress);
+        } else {
+          stuckCount++;
+          if (stuckCount >= MAX_STUCK) {
+            var randBlock = randomKSubset(v, k);
+            selected.push(randBlock);
+            var rsubs = getTSubsets(randBlock, t);
+            for (var ri = 0; ri < rsubs.length; ri++) uncoveredSet.delete(rsubs[ri].join(','));
+            stuckCount = 0;
+          }
+        }
+
+        return yieldControl().then(samplingStep);
+      }
+
+      return samplingStep();
+    });
+  };
+
+  /* -----------------------------------------------------------
+     MULTI-PASS REDUNDANCY PRUNING
+     Repeatedly scan the current block list, removing any block
+     whose every t-subset is also covered by another block.
+     Iterate until a full pass makes no removals.
+     ----------------------------------------------------------- */
+  WheelEngine.prototype._pruneBlocks = function (blocks) {
+    var self = this;
+    if (blocks.length === 0 || self.totalTSubsets > MAX_EXACT_TSUBSETS) {
+      return Promise.resolve(blocks);
+    }
+
+    var changed = true;
+    var current = blocks.slice();
+
+    while (changed) {
+      changed = false;
+
+      /* Build coverage-count map. */
+      var coverCount = {};
+      for (var i = 0; i < current.length; i++) {
+        var subs = getTSubsets(current[i], self.t);
+        for (var s = 0; s < subs.length; s++) {
+          var key = subs[s].join(',');
+          coverCount[key] = (coverCount[key] || 0) + 1;
+        }
+      }
+
+      /* Mark redundant blocks (every t-subset has cover-count ≥ 2). */
+      var pruned = [];
+      for (var bi = 0; bi < current.length; bi++) {
+        var blockSubs = getTSubsets(current[bi], self.t);
+        var isRedundant = true;
+        for (var si = 0; si < blockSubs.length; si++) {
+          if ((coverCount[blockSubs[si].join(',')] || 0) < 2) {
+            isRedundant = false;
+            break;
+          }
+        }
+        if (isRedundant) {
+          /* Decrement counts for removed block. */
+          for (var di = 0; di < blockSubs.length; di++) {
+            var dk = blockSubs[di].join(',');
+            if (coverCount[dk]) coverCount[dk]--;
+          }
+          changed = true;
+        } else {
+          pruned.push(current[bi]);
+        }
+      }
+      current = pruned;
+    }
+
+    return Promise.resolve(current);
+  };
+
+  /* -----------------------------------------------------------
+     BRANCH-AND-BOUND EXACT MINIMUM SEARCH
+     ----------------------------------------------------------- *
+     Tries to find a covering wheel with fewer tickets than the
+     current best greedy result.
+     
+     Algorithm:
+       - Uses iterative DFS with an explicit depth-stack.
+       - At each depth, tries candidate blocks from a given start
+         index (enforcing canonical order to avoid duplicates).
+       - Pruning: if uncovered > remaining_depth × max_per_block,
+         this branch cannot possibly achieve full coverage —
+         backtrack immediately.
+       - Calls _tryTargetSize() repeatedly, starting at
+         bestBlocks.length - 1 down to lowerBound, until either
+         a smaller solution is found or B&B exhausts its node
+         budget.
+     -----------------------------------------------------------  */
+  WheelEngine.prototype._minimizeWithBB = function (bestBlocks, data) {
+    var self = this;
+    var kt          = binomial(self.k, self.t);   /* max coverage per block */
+    var lowerBound  = self.lowerBound;
+
+    /**
+     * Try to find a covering design with exactly targetSize blocks.
+     * Returns Promise<number[][]|null> — null if no solution found
+     * Returns null if stopped before finding a solution.
+     */
+    function tryTarget(targetSize) {
+      if (self._stopped || targetSize < lowerBound) {
+        return Promise.resolve(null);
+      }
+
+      self.callbacks.onPhase(
+        'Branch-and-bound: trying ' + targetSize + ' ticket' +
+        (targetSize === 1 ? '' : 's') +
+        ' (lower bound = ' + lowerBound + '). Running until done or stopped…',
+        93
+      );
+
+      var numK       = data.numK;
+      var numT       = data.numT;
+      var blockTSubs = data.blockTSubs;
+      var allBlocks  = data.allBlocks;
+
+      /*
+       * Sort block indices by descending coverage count so the most
+       * useful blocks are tried first — improves pruning greatly.
+       */
+      var blockOrder = [];
+      for (var i = 0; i < numK; i++) blockOrder.push(i);
+      blockOrder.sort(function (a, b) {
+        return blockTSubs[b].length - blockTSubs[a].length;
+      });
+
+      /* Remap block t-subsets to sorted order. */
+      var sortedBlockTSubs = blockOrder.map(function (bi) { return blockTSubs[bi]; });
+      var sortedAllBlocks  = blockOrder.map(function (bi) { return allBlocks[bi]; });
+
+      /*
+       * For each t-subset, list of sorted-block indices that cover it.
+       * Used by canCoverAll for stronger pruning.
+       */
+      var sortedTSubBlocks2 = new Array(numT);
+      for (var ti2 = 0; ti2 < numT; ti2++) sortedTSubBlocks2[ti2] = [];
+      for (var bi2 = 0; bi2 < numK; bi2++) {
+        var tss = sortedBlockTSubs[bi2];
+        for (var tsi = 0; tsi < tss.length; tsi++) sortedTSubBlocks2[tss[tsi]].push(bi2);
+      }
+      /* Lists are already sorted ascending since we iterated sbi2 in order. */
+
+      /**
+       * Pruning: check that every still-uncovered t-subset has at least
+       * one candidate block remaining at index >= startIdx.
+       * If any uncovered t-subset has ALL its covering blocks before
+       * startIdx, this branch can never achieve full coverage.
+       * @param {Uint8Array} cov - current covered bit-array
+       * @param {number} startIdx
+       * @returns {boolean}
+       */
+      function canCoverAll(cov, startIdx) {
+        for (var cci = 0; cci < numT; cci++) {
+          if (cov[cci]) continue;                      /* already covered */
+          var cbs = sortedTSubBlocks2[cci];
+          if (cbs.length === 0) return false;          /* never coverable */
+          if (cbs[cbs.length - 1] < startIdx) return false; /* all blocks used */
+        }
+        return true;
+      }
+
+      /* ---- Iterative DFS state ---- */
+      var covered       = new Uint8Array(numT);
+      var nextBiStack   = new Int32Array(targetSize); /* next block index to try at each depth */
+      var chosenStack   = new Int32Array(targetSize); /* block index chosen at each depth */
+      var uncovStack    = new Int32Array(targetSize + 1);
+      var deltaStore    = [];
+      for (var di = 0; di < targetSize; di++) deltaStore.push([]);
+
+      uncovStack[0] = numT;
+      nextBiStack[0] = 0;
+      var depth     = 0;
+      var nodeCount = 0;
+      var found     = null;
+      var exhausted = false;
+
+      function doStep() {
+        if (found || self._stopped || exhausted) {
+          return Promise.resolve(found);
+        }
+
+        var NODES_PER_YIELD = 25000; /* B&B nodes between browser yields */
+        var b = 0;
+
+        while (b < NODES_PER_YIELD && !found && !exhausted && !self._stopped) {
+          b++;
+          nodeCount++;
+
+          var d         = depth;
+          var remaining = targetSize - d;
+          var uncov     = uncovStack[d];
+          var bi        = nextBiStack[d];
+
+          /* ----- Backtrack if this depth cannot succeed ----- */
+          var needBack =
+            uncov > remaining * kt ||        /* upper-bound pruning */
+            (numK - bi) < remaining;          /* not enough blocks left */
+
+          if (needBack) {
+            if (d === 0) { exhausted = true; break; }
+            /* Undo the block applied when entering this depth. */
+            var dlt = deltaStore[d - 1];
+            for (var ui = 0; ui < dlt.length; ui++) covered[dlt[ui]] = 0;
+            deltaStore[d - 1] = [];
+            depth = d - 1;
+            nextBiStack[depth]++;
+            continue;
+          }
+
+          /* ----- Try applying block bi at depth d ----- */
+          var tsubs    = sortedBlockTSubs[bi];
+          var newDelta = [];
+          for (var si = 0; si < tsubs.length; si++) {
+            if (!covered[tsubs[si]]) {
+              covered[tsubs[si]] = 1;
+              newDelta.push(tsubs[si]);
+            }
+          }
+          var newUncov = uncov - newDelta.length;
+
+          if (newUncov === 0) {
+            /* *** Solution found! *** */
+            chosenStack[d] = bi;
+            found = [];
+            for (var fi = 0; fi <= d; fi++) found.push(sortedAllBlocks[chosenStack[fi]]);
+            /* Undo everything before returning. */
+            for (var udi = 0; udi < newDelta.length; udi++) covered[newDelta[udi]] = 0;
+            for (var udd = 0; udd < d; udd++) {
+              var uddlt = deltaStore[udd];
+              for (var uddi = 0; uddi < uddlt.length; uddi++) covered[uddlt[uddi]] = 0;
+            }
+            break;
+          }
+
+          if (d + 1 < targetSize) {
+            /* Prune: verify the remaining blocks can still cover every
+               uncovered t-subset from the new startIdx (bi+1) onwards. */
+            if (!canCoverAll(covered, bi + 1)) {
+              /* This branch is unsatisfiable — undo and try next. */
+              for (var ri = 0; ri < newDelta.length; ri++) covered[newDelta[ri]] = 0;
+              nextBiStack[d]++;
+            } else {
+              /* Go deeper: commit this block, advance depth. */
+              chosenStack[d]    = bi;
+              deltaStore[d]     = newDelta;
+              uncovStack[d + 1] = newUncov;
+              nextBiStack[d + 1] = bi + 1;
+              depth = d + 1;
+            }
+          } else {
+            /* At max depth and coverage not achieved — undo, try next. */
+            for (var ri = 0; ri < newDelta.length; ri++) covered[newDelta[ri]] = 0;
+            nextBiStack[d]++;
+          }
+        }
+
+        if (found || self._stopped || exhausted) {
+          return Promise.resolve(found);
+        }
+        /* Yield to browser then continue. */
+        return yieldControl().then(doStep);
+      }
+
+      return doStep();
+    }
+
+    /*
+     * Attempt to reduce solution size one ticket at a time.
+     * Start from bestBlocks.length - 1 and work down to lowerBound.
+     */
+    function minimize(currentBest) {
+      var target = currentBest.length - 1;
+      if (self._stopped || target < lowerBound) {
+        return Promise.resolve(currentBest);
+      }
+      return tryTarget(target).then(function (smaller) {
+        if (smaller) {
+          /* Found a solution with fewer tickets — prune and try again. */
+          return self._pruneBlocks(smaller).then(function (pruned) {
+            self.callbacks.onPhase(
+              'Found ' + pruned.length + '-ticket wheel! Trying to go smaller\u2026', 95
+            );
+            return minimize(pruned);
+          });
+        }
+        /* B&B couldn't improve further — return current best. */
+        return Promise.resolve(currentBest);
+      });
+    }
+
+    return minimize(bestBlocks);
+  };
+
+  /* -----------------------------------------------------------
+     VERIFICATION
+     Confirm every C(v,t) t-subset is covered by the final wheel.
+     Only feasible when totalTSubsets ≤ MAX_EXACT_TSUBSETS.
+     ----------------------------------------------------------- */
+  WheelEngine.prototype._verify = function (blocks) {
+    var self = this;
+    if (self.totalTSubsets > MAX_EXACT_TSUBSETS) {
+      return { status: 'heuristic', covered: null, total: null, missing: [] };
+    }
+
+    var covered = {};
+    for (var bi = 0; bi < blocks.length; bi++) {
+      var subs = getTSubsets(blocks[bi], self.t);
+      for (var si = 0; si < subs.length; si++) covered[subs[si].join(',')] = true;
+    }
+
+    var missing = [];
+    var total   = self.totalTSubsets;
+    var it      = combinationsRange(self.v, self.t);
+    var r;
+    while (!(r = it.next()).done) {
+      if (!covered[r.value.join(',')]) {
+        missing.push(r.value);
+        if (missing.length > 20) break;
+      }
+    }
+
+    if (missing.length === 0) {
+      return { status: 'verified', covered: total, total: total, missing: [] };
+    }
+    return {
+      status: 'partial',
+      covered: total - missing.length,
+      total: total,
+      missing: missing.slice(0, 10)
+    };
+  };
+
+  /* ============================================================
+     E: EXPORTERS
+     ============================================================ */
+
+  function toTXT(blocks, params, verification) {
+    var lines = [];
+    lines.push('=== WHEEL GENERATOR RESULTS ===');
+    lines.push('Generated: ' + new Date().toISOString());
+    lines.push('');
+    lines.push('Parameters:');
+    lines.push('  Pool size (v):     ' + params.v);
+    lines.push('  Ticket size (k):   ' + params.k);
+    lines.push('  Guarantee (t):     ' + params.t);
+    lines.push('  Number of tickets: ' + blocks.length);
+    lines.push('  Lower bound:       ' + params.lowerBound);
+    lines.push('');
+    lines.push('Verification status: ' + verification.status);
+    if (verification.covered !== null) {
+      lines.push('  Patterns covered: ' + verification.covered + ' / ' + verification.total);
+    }
+    lines.push('');
+    lines.push('Tickets:');
+    for (var i = 0; i < blocks.length; i++) {
+      var num = String(i + 1);
+      while (num.length < 4) num = ' ' + num;
+      lines.push('  ' + num + ': ' + blocks[i].join('  '));
+    }
+    lines.push('');
+    lines.push('=== END ===');
+    return lines.join('\n');
+  }
+
+  function toJSON(blocks, params, verification) {
+    var obj = {
+      meta: {
+        tool: 'Wheel Generator',
+        generated: new Date().toISOString(),
+        parameters: { v: params.v, k: params.k, t: params.t },
+        ticketCount: blocks.length,
+        lowerBound: params.lowerBound,
+        verification: {
+          status: verification.status,
+          patternsCovered: verification.covered,
+          patternsTotal: verification.total
+        }
+      },
+      tickets: blocks
+    };
+    return JSON.stringify(obj, null, 2);
+  }
+
+  function downloadFile(content, filename, mimeType) {
+    var blob   = new Blob([content], { type: mimeType });
+    var url    = URL.createObjectURL(blob);
+    var anchor = document.createElement('a');
+    anchor.href     = url;
+    anchor.download = filename;
+    anchor.style.display = 'none';
+    document.body.appendChild(anchor);
+    anchor.click();
+    setTimeout(function () {
+      URL.revokeObjectURL(url);
+      document.body.removeChild(anchor);
+    }, 1000);
+  }
+
+  /* ============================================================
+     F: UI CONTROLLER
+     ============================================================ */
+
+  var state = {
+    engine:             null,
+    running:            false,
+    resultBlocks:       null,
+    resultVerification: null,
+    resultParams:       null,
+    elapsedMs:          0,
+    timerInterval:      null
+  };
+
+  function el(id)           { return document.getElementById(id); }
+  function setText(id, txt) { var n = el(id); if (n) n.textContent = String(txt); }
+
+  function setProgress(pct, label) {
+    var fill = el('wg-progress-fill');
+    var role = el('wg-progress-bar-role');
+    if (!fill || !role) return;
+    var p = Math.max(0, Math.min(100, pct));
+    fill.style.width = p + '%';
+    fill.classList.remove('is-indeterminate');
+    role.setAttribute('aria-valuenow', String(p));
+    if (label !== undefined) setText('wg-phase-text', label);
+  }
+
+  function setIndeterminate(label) {
+    var fill = el('wg-progress-fill');
+    if (fill) fill.classList.add('is-indeterminate');
+    if (label !== undefined) setText('wg-phase-text', label);
+  }
+
+  function showSection(id, visible) {
+    var node = el(id);
+    if (!node) return;
+    if (visible) node.classList.add('is-visible');
+    else         node.classList.remove('is-visible');
+  }
+
+  function setButtonStates(running, hasResult) {
+    var btnGen  = el('wg-btn-generate');
+    var btnStop = el('wg-btn-stop');
+    var btnClr  = el('wg-btn-clear');
+    var btnTxt  = el('wg-btn-export-txt');
+    var btnJson = el('wg-btn-export-json');
+    var btnCopy = el('wg-btn-copy');
+    if (btnGen)  btnGen.disabled  = running;
+    if (btnStop) btnStop.disabled = !running;
+    if (btnClr)  btnClr.disabled  = running || !hasResult;
+    if (btnTxt)  btnTxt.disabled  = running || !hasResult;
+    if (btnJson) btnJson.disabled = running || !hasResult;
+    if (btnCopy) btnCopy.disabled = running || !hasResult;
+  }
+
+  function startTimer() {
+    var start = Date.now();
+    state.timerInterval = setInterval(function () {
+      setText('wg-stat-time', fmtTime(Date.now() - start));
+    }, 250);
+  }
+
+  function stopTimer() {
+    if (state.timerInterval) {
+      clearInterval(state.timerInterval);
+      state.timerInterval = null;
+    }
+  }
+
+  /* ---- Dynamic description panel ---- */
+  function updateDescription() {
+    var v = parseInt(el('wg-v').value, 10);
+    var k = parseInt(el('wg-k').value, 10);
+    var t = parseInt(el('wg-t').value, 10);
+    var panel = el('wg-desc');
+    if (!panel) return;
+
+    if (isNaN(v) || isNaN(k) || isNaN(t)) {
+      panel.textContent = 'Enter your parameters above to see a plain-English summary here.';
+      panel.className = 'wg-desc-panel wg-mt-2';
+      return;
+    }
+
+    var nT  = binomial(v, t);
+    var nK  = binomial(v, k);
+    var lb  = schonheimLB(v, k, t);
+
+    var msg = 'You are building tickets with ' + k + ' number' + (k === 1 ? '' : 's') +
+              ' each, chosen from a pool of ' + v + '. ' +
+              'The wheel must ensure every group of ' + t + ' number' + (t === 1 ? '' : 's') +
+              ' appears on at least one ticket. ' +
+              'There are ' + fmt(nT) + ' such pattern' + (nT === 1 ? '' : 's') + ' to cover. ' +
+              'The theoretical minimum number of tickets is at least ' + fmt(lb) + '.';
+
+    var isWarning = false;
+    if (!isFinite(nK) || !isFinite(nT)) {
+      msg += ' \u26a0\ufe0f The pool is extremely large \u2014 only the heuristic method will run. ' +
+             'Press Stop whenever you are satisfied with the result.';
+      isWarning = true;
+    } else if (nK > MAX_EXACT_KSUBSETS) {
+      msg += ' \u23f3 With this pool size, sampling mode will be used (exact search is not feasible). ' +
+             'The result will be a strong wheel but not exhaustively verified.';
+      isWarning = true;
+    } else if (nK > 50000) {
+      msg += ' \u23f3 This is a medium-large job \u2014 it may take a few minutes.';
+    }
+
+    panel.textContent = msg;
+    panel.className = 'wg-desc-panel wg-mt-2' + (isWarning ? ' wg-desc--warning' : '');
+  }
+
+  /* ---- Show form errors ---- */
+  function showFormErrors(errors) {
+    ['v', 'k', 't'].forEach(function (f) {
+      var field = el('wg-field-' + f);
+      var errEl = el('wg-' + f + '-err');
+      if (field) field.classList.remove('has-error');
+      if (errEl) errEl.textContent = '';
+    });
+    el('wg-form-error').classList.add('wg-alert--hidden');
+
+    if (errors.length === 0) return;
+
+    errors.forEach(function (e) {
+      if (e.field !== 'general') {
+        var field = el('wg-field-' + e.field);
+        var errEl = el('wg-' + e.field + '-err');
+        if (field) field.classList.add('has-error');
+        if (errEl) errEl.textContent = e.message;
+      }
+    });
+
+    var errBox = el('wg-form-error');
+    var errTxt = el('wg-form-error-text');
+    errTxt.textContent = errors.map(function (e) { return e.message; }).join(' ');
+    errBox.classList.remove('wg-alert--hidden');
+  }
+
+  /* ---- Render results ---- */
+  function renderResults(blocks, verification, params, elapsedMs) {
+    state.resultBlocks       = blocks;
+    state.resultVerification = verification;
+    state.resultParams       = params;
+    state.elapsedMs          = elapsedMs;
+
+    showSection('wg-results-section', true);
+
+    var lb = params.lowerBound || 1;
+    var isOptimal = (blocks.length === lb) && (verification.status === 'verified');
+
+    /* Summary stats */
+    var summaryEl = el('wg-results-summary');
+    summaryEl.innerHTML = '';
+    var stats = [
+      { label: 'Tickets',        value: blocks.length },
+      { label: 'Lower bound',    value: fmt(lb) },
+      { label: 'Pool size (v)',  value: params.v },
+      { label: 'Ticket size (k)', value: params.k },
+      { label: 'Guarantee (t)',  value: params.t },
+      { label: 'Time taken',     value: fmtTime(elapsedMs) }
+    ];
+    stats.forEach(function (s) {
+      var card = document.createElement('div');
+      card.className = 'wg-stat';
+      var lbl = document.createElement('div');
+      lbl.className = 'wg-stat__label';
+      lbl.textContent = s.label;
+      var val = document.createElement('div');
+      val.className = 'wg-stat__value';
+      val.textContent = String(s.value);
+      card.appendChild(lbl);
+      card.appendChild(val);
+      summaryEl.appendChild(card);
+    });
+
+    /* Verification + optimality badge */
+    var badgeEl  = el('wg-verification-badge');
+    badgeEl.innerHTML = '';
+    var msgEl    = el('wg-results-message');
+    var alertEl  = el('wg-result-alert');
+    var alertIcon= el('wg-result-alert-icon');
+    var alertTxt = el('wg-result-alert-text');
+    alertEl.className = 'wg-alert wg-alert--hidden';
+
+    var badge = document.createElement('span');
+
+    if (isOptimal) {
+      badge.className   = 'wg-badge wg-badge--success';
+      badge.textContent = '\u2705 Proven Optimal';
+      msgEl.textContent = 'This is the mathematically smallest possible wheel for your parameters ' +
+        '(' + blocks.length + ' tickets = lower bound). Every required pattern is verified present.';
+    } else if (verification.status === 'verified') {
+      badge.className   = 'wg-badge wg-badge--success';
+      badge.textContent = '\u2705 Fully Verified';
+      msgEl.textContent = 'Every required pattern appears on at least one ticket. ' +
+        'The wheel uses ' + blocks.length + ' tickets (lower bound is ' + lb + '). ' +
+        (blocks.length === lb
+          ? 'This matches the lower bound — it is provably optimal!'
+          : 'Branch-and-bound did not find a smaller solution before completing or being stopped. ' +
+            'Run again with more restarts to continue searching for a smaller wheel.');
+    } else if (verification.status === 'partial') {
+      badge.className   = 'wg-badge wg-badge--warning';
+      badge.textContent = '\u26a0\ufe0f Partially Covered';
+      msgEl.textContent = 'The wheel covers ' + fmt(verification.covered) + ' of ' +
+        fmt(verification.total) + ' patterns. ' +
+        'Try running again with more restarts, or press Stop on the next run to accept an earlier result.';
+      alertEl.className    = 'wg-alert wg-alert--warning';
+      alertIcon.textContent= '\u26a0\ufe0f';
+      alertTxt.textContent = 'Coverage is incomplete. Increase restarts or run again.';
+    } else {
+      badge.className   = 'wg-badge wg-badge--info';
+      badge.textContent = '\u2139\ufe0f Strong Heuristic Result';
+      msgEl.textContent = 'The pool is too large for exhaustive verification in the browser. ' +
+        'The result uses a high-quality greedy algorithm with ' + params.restarts + ' restarts. ' +
+        'Lower bound: ' + lb + ' tickets. Result: ' + blocks.length + ' tickets. ' +
+        'For proven optimality on large instances, a dedicated ILP solver would be needed.';
+      alertEl.className    = 'wg-alert wg-alert--info';
+      alertIcon.textContent= '\u2139\ufe0f';
+      alertTxt.textContent = 'Large-problem mode: best heuristic result. Full verification not possible in-browser.';
+    }
+    badgeEl.appendChild(badge);
+
+    /* Ticket table */
+    var tbody = el('wg-results-tbody');
+    tbody.innerHTML = '';
+    blocks.forEach(function (block, idx) {
+      var tr = document.createElement('tr');
+
+      var tdNum = document.createElement('td');
+      tdNum.textContent = String(idx + 1);
+
+      var tdNums = document.createElement('td');
+      var chipWrap = document.createElement('div');
+      chipWrap.className = 'wg-ticket-numbers';
+      block.forEach(function (n) {
+        var chip = document.createElement('span');
+        chip.className   = 'wg-num-chip';
+        chip.textContent = String(n);
+        chipWrap.appendChild(chip);
+      });
+      tdNums.appendChild(chipWrap);
+
+      tr.appendChild(tdNum);
+      tr.appendChild(tdNums);
+      tbody.appendChild(tr);
+    });
+
+    el('wg-results-section').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  /* ---- Clear results ---- */
+  function clearResults() {
+    state.resultBlocks        = null;
+    state.resultVerification  = null;
+    state.resultParams        = null;
+    showSection('wg-results-section', false);
+    showSection('wg-progress-section', false);
+    setText('wg-results-tbody', '');
+    el('wg-results-summary').innerHTML = '';
+    el('wg-verification-badge').innerHTML = '';
+    setText('wg-results-message', '');
+    setButtonStates(false, false);
+  }
+
+  /* ---- Build FAQ ---- */
+  var FAQ_DATA = [
+    {
+      q: 'Is this guaranteed to find the mathematically smallest wheel?',
+      a: 'For small and medium problems (up to roughly 2 million candidate tickets) the tool ' +
+         'uses branch-and-bound exact search after the greedy phase. Branch-and-bound is ' +
+         'guaranteed to find the optimal solution or prove none exists at that size — it ' +
+         'just explores every feasible combination with smart pruning. When the result ' +
+         'equals the theoretical lower bound, it is labeled "Proven Optimal". For very ' +
+         'large problems the heuristic result is returned and labeled accordingly.'
+    },
+    {
+      q: 'What is the theoretical lower bound?',
+      a: 'Each ticket can cover at most C(k,t) t-patterns. Since there are C(v,t) patterns ' +
+         'in total, we need at least ceil(C(v,t) / C(k,t)) tickets. This number is the ' +
+         'lower bound displayed in the results. If the wheel you get has exactly this many ' +
+         'tickets, it is provably optimal — no smaller wheel can exist.'
+    },
+    {
+      q: 'Why might branch-and-bound not always give the optimal answer?',
+      a: 'Branch-and-bound runs without a node limit \u2014 it continues until it either ' +
+         'finds a smaller solution, exhausts all possibilities at the target size ' +
+         '(which proves the current result is optimal), or you press Stop. For hard ' +
+         'instances with many candidate blocks, the search tree can be enormous and ' +
+         'may run for a long time. Press Stop at any time if you are satisfied with ' +
+         'the current result. Running again with a different restart count uses a ' +
+         'different random seed ordering, which can reach the optimal faster.'
+    },
+    {
+      q: 'What does "Verified" mean?',
+      a: '"Verified" means the tool enumerated every single required t-pattern and ' +
+         'confirmed that at least one ticket covers it. For problems where exact ' +
+         'enumeration is feasible (up to ~500,000 patterns), verification is always ' +
+         'performed. For larger problems, sampling is used and the result is labeled ' +
+         '"Heuristic".'
+    },
+    {
+      q: 'Can I use this for different lottery or pool-coverage rules?',
+      a: 'Yes. The three parameters (v, k, t) describe any covering design problem: ' +
+         'v is the pool, k is the block/ticket size, t is the pattern size to cover. ' +
+         'Use it for lotteries, sports tipping, test-case coverage, or any combinatorial ' +
+         'coverage task.'
+    },
+    {
+      q: 'Will this page send my data to a server?',
+      a: 'No. Every calculation runs entirely inside your browser. No data is ever sent ' +
+         'anywhere. You can load the page once and then work offline.'
+    }
+  ];
+
+  function buildFAQ() {
+    var list = el('wg-faq-list');
+    if (!list) return;
+    FAQ_DATA.forEach(function (item, idx) {
+      var wrapper  = document.createElement('div');
+      wrapper.className = 'wg-faq-item';
+      wrapper.setAttribute('role', 'listitem');
+
+      var btnId  = 'wg-faq-btn-'  + idx;
+      var answId = 'wg-faq-ans-'  + idx;
+
+      var btn = document.createElement('button');
+      btn.className = 'wg-faq-question';
+      btn.type = 'button';
+      btn.id   = btnId;
+      btn.setAttribute('aria-expanded', 'false');
+      btn.setAttribute('aria-controls', answId);
+
+      var questionText = document.createElement('span');
+      questionText.textContent = item.q;
+
+      var chevron = document.createElement('span');
+      chevron.className = 'wg-faq-chevron';
+      chevron.textContent = '\u25be';
+      chevron.setAttribute('aria-hidden', 'true');
+
+      btn.appendChild(questionText);
+      btn.appendChild(chevron);
+
+      var answer = document.createElement('div');
+      answer.className = 'wg-faq-answer';
+      answer.id = answId;
+      answer.setAttribute('role', 'region');
+      answer.setAttribute('aria-labelledby', btnId);
+      answer.textContent = item.a;
+
+      btn.addEventListener('click', function () {
+        var open = wrapper.classList.toggle('is-open');
+        btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+      });
+
+      wrapper.appendChild(btn);
+      wrapper.appendChild(answer);
+      list.appendChild(wrapper);
+    });
+  }
+
+  /* ---- Read form values ---- */
+  function readForm() {
+    return {
+      v:          parseInt(el('wg-v').value, 10),
+      k:          parseInt(el('wg-k').value, 10),
+      t:          parseInt(el('wg-t').value, 10),
+      maxTickets: el('wg-maxtickets').value.trim()
+                   ? parseInt(el('wg-maxtickets').value, 10) : null,
+      restarts:   parseInt(el('wg-restarts').value, 10)
+    };
+  }
+
+  /* ---- Main generate handler ---- */
+  function handleGenerate() {
+    var params = readForm();
+    var errors = validateParams(params.v, params.k, params.t, params.maxTickets);
+    showFormErrors(errors);
+    if (errors.length > 0) return;
+
+    clearResults();
+    state.running = true;
+    setButtonStates(true, false);
+    showSection('wg-progress-section', true);
+
+    var nT = binomial(params.v, params.t);
+    var nK = binomial(params.v, params.k);
+    var lb = schonheimLB(params.v, params.k, params.t);
+    params.lowerBound = lb;
+
+    var modeLabel;
+    if (nT <= MAX_EXACT_TSUBSETS && nK <= MAX_EXACT_KSUBSETS) modeLabel = 'Exact + B&B';
+    else if (nT <= MAX_EXACT_TSUBSETS) modeLabel = 'Mixed (sampling)';
+    else modeLabel = 'Heuristic';
+
+    setText('wg-stat-tickets',   '0');
+    setText('wg-stat-uncovered', '—');
+    setText('wg-stat-mode',      modeLabel);
+    setText('wg-stat-lb',        fmt(lb));
+    setIndeterminate('Initializing\u2026');
+    startTimer();
+
+    var callbacks = {
+      onPhase: function (label, pct) {
+        setText('wg-phase-text', label);
+        if (pct > 0) setProgress(pct, label);
+        else setIndeterminate(label);
+      },
+      onRound: function (tickets, uncovered, pct) {
+        setText('wg-stat-tickets',   fmt(tickets));
+        setText('wg-stat-uncovered', uncovered !== undefined ? fmt(uncovered) : '—');
+        if (pct !== undefined) setProgress(pct);
+      },
+      onDone: function (blocks, verification, elapsed) {
+        stopTimer();
+        state.running = false;
+        setButtonStates(false, blocks.length > 0);
+        setProgress(100, 'Done!');
+        setText('wg-stat-time',      fmtTime(elapsed));
+        setText('wg-stat-tickets',   fmt(blocks.length));
+        setText('wg-stat-uncovered', verification.covered !== null
+          ? fmt(verification.total - verification.covered) : '—');
+        renderResults(blocks, verification, params, elapsed);
+      },
+      onStopped: function (blocks, elapsed) {
+        stopTimer();
+        state.running = false;
+        if (blocks && blocks.length > 0) {
+          setButtonStates(false, true);
+          renderResults(
+            blocks,
+            { status: 'heuristic', covered: null, total: null, missing: [] },
+            params,
+            elapsed
+          );
+        } else {
+          setButtonStates(false, false);
+          setProgress(0, 'Stopped by user — no result yet.');
+        }
+      }
+    };
+
+    state.engine = new WheelEngine(params, callbacks);
+    state.engine.run();
+  }
+
+  /* ---- Event bindings ---- */
+  function bindEvents() {
+    el('wg-btn-generate').addEventListener('click', handleGenerate);
+
+    el('wg-btn-stop').addEventListener('click', function () {
+      if (state.engine) state.engine.stop();
+    });
+
+    el('wg-btn-clear').addEventListener('click', clearResults);
+
+    el('wg-btn-export-txt').addEventListener('click', function () {
+      if (!state.resultBlocks) return;
+      var content = toTXT(state.resultBlocks, state.resultParams, state.resultVerification);
+      downloadFile(content, 'wheel-result.txt', 'text/plain');
+    });
+
+    el('wg-btn-export-json').addEventListener('click', function () {
+      if (!state.resultBlocks) return;
+      var content = toJSON(state.resultBlocks, state.resultParams, state.resultVerification);
+      downloadFile(content, 'wheel-result.json', 'application/json');
+    });
+
+    el('wg-btn-copy').addEventListener('click', function () {
+      if (!state.resultBlocks) return;
+      var text = toTXT(state.resultBlocks, state.resultParams, state.resultVerification);
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(function () {
+          var btn = el('wg-btn-copy');
+          var original = btn.textContent;
+          btn.textContent = '\u2713 Copied!';
+          setTimeout(function () { btn.textContent = original; }, 2000);
+        }).catch(function () { /* clipboard may be blocked — silently ignore */ });
+      }
+    });
+
+    el('wg-preset').addEventListener('change', function () {
+      var val = el('wg-preset').value;
+      if (!val) return;
+      var parts = val.split(',');
+      if (parts.length !== 3) return;
+      el('wg-v').value = parts[0].trim();
+      el('wg-k').value = parts[1].trim();
+      el('wg-t').value = parts[2].trim();
+      updateDescription();
+      el('wg-preset').value = '';
+    });
+
+    ['wg-v', 'wg-k', 'wg-t'].forEach(function (id) {
+      el(id).addEventListener('input',  updateDescription);
+      el(id).addEventListener('change', updateDescription);
+    });
+  }
+
+  /* ---- Init ---- */
+  function init() {
+    buildFAQ();
+    bindEvents();
+    updateDescription();
+    setButtonStates(false, false);
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+
+}());
+</script>
+</body>
+</html>
